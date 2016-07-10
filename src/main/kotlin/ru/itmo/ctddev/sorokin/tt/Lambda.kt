@@ -4,7 +4,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 
 interface Lambda {
-    fun toBoundedString(): String = "(" + toString() + ")"
+    fun toBoundedString(): String = "(${toString()})"
     fun substitute(varSubst: String, subst: Lambda): Lambda = this
     fun reduce(): Lambda? = null
 }

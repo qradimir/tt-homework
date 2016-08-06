@@ -19,8 +19,8 @@ fun main(args: Array<String>) {
     when (args[0]) {
         "reduce" -> {
             assertInput { args.size == 2 }
-            var lambda = valueOf(args[1])
-            var reduced = lambda.reduce();
+            var lambda = valueOf(args[1]).resolve(emptyScope())
+            var reduced = lambda.reduce()
             while (reduced != null) {
                 lambda = reduced
                 reduced = lambda.reduce()

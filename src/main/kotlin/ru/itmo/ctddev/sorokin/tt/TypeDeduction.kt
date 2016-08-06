@@ -6,7 +6,7 @@ data class TypeEquality(val left : Type, val right: Type)
 
 class TypeEqualitySetResolver(val mainLambda: Lambda) {
     private val literals : MutableMap<String, Type> = hashMapOf()
-    private val varMapping: MutableMap<String, Type> = hashMapOf()
+    private val varMapping: MutableMap<Variable, Type> = hashMapOf()
     private val equalities: MutableSet<TypeEquality> = hashSetOf()
     private val typeNameGenerator: TypeNameGenerator = TypeNameGenerator()
 
@@ -22,18 +22,15 @@ class TypeEqualitySetResolver(val mainLambda: Lambda) {
 
     private fun generate(lambda: Lambda): Type =
             when (lambda) {
-                is Variable -> {
-                    val name = lambda.varName
-                    varMapping.getOrPut(name) { newTypeLiteral() }
+                is VariableReference -> {
+                    val variable = lambda.variable
+                    varMapping.getOrPut(variable) { newTypeLiteral() }
                 }
                 is Abstraction -> {
-                    val name = lambda.varName
-                    val oldType = varMapping[name]
-                    val newType = newTypeLiteral()
-                    varMapping[name] = newType
+                    val param = lambda.param
+                    val paramType = varMapping.getOrPut(param) { newTypeLiteral() }
                     val bodyType = generate(lambda.body)
-                    varMapping[name] = oldType
-                    TApplication(newType, bodyType)
+                    TApplication(paramType, bodyType)
                 }
                 is Application -> {
                     val funcType = generate(lambda.func)
@@ -96,8 +93,8 @@ class TypeEqualitySetResolver(val mainLambda: Lambda) {
                 }
             }
         }
-        for (equality in equalities) {
-            literals[(equality.left as TVariable).typeName] = equality.right
+        for ((left, right) in equalities) {
+            literals[(left as TVariable).typeName] = right
         }
         return true
     }

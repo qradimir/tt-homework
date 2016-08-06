@@ -1,31 +1,34 @@
 package ru.itmo.ctddev.sorokin.tt
 
-import org.antlr.v4.runtime.ANTLRInputStream;
-import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
 
 interface Lambda {
     fun toBoundedString(): String = "(${toString()})"
-    fun substitute(varSubst: String, subst: Lambda): Lambda = this
+    fun substitute(varSubst: Variable, subst: Lambda): Lambda = this
     fun reduce(): Lambda? = null
+    fun scope() : Scope
 }
 
-data class Abstraction(
-        val varName: String,
+class Abstraction(
+        val param: Variable,
         val body: Lambda
 ) : Lambda {
-    override fun toString(): String = '\\' + varName + '.' + body
+    override fun toString(): String = '\\' + param.alias + '.' + body
 
-    override fun substitute(varSubst: String, subst: Lambda): Lambda =
-            if (varSubst.equals(varName)) this
-            else Abstraction(varName, body.substitute(varSubst, subst))
+    override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
+            if (varSubst == param) this
+            else Abstraction(param, body.substitute(varSubst, subst))
 
     override fun reduce(): Lambda? {
-        val reduced = body.reduce();
-        return if (reduced == null) null else Abstraction(varName, reduced);
+        val reduced = body.reduce() ?: return null
+        return Abstraction(param, reduced)
     }
+
+    override fun scope(): Scope = body.scope().concealed(param.alias)
 }
 
-data class Application(
+class Application(
         val func: Lambda,
         val arg: Lambda
 ) : Lambda {
@@ -34,16 +37,16 @@ data class Application(
                 is Abstraction -> func.toBoundedString()
                 else -> func.toString()
             } + ' ' +  when (arg) {
-                is Variable -> arg.toString()
+                is VariableReference -> arg.toString()
                 else -> arg.toBoundedString()
             }
 
-    override fun substitute(varSubst: String, subst: Lambda): Lambda =
+    override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
             Application(func.substitute(varSubst, subst), arg.substitute(varSubst, subst))
 
     override fun reduce(): Lambda? =
             if (func is Abstraction)
-                func.body.substitute(func.varName, arg)
+                func.body.substitute(func.param, arg)
             else {
                 val funcReduced = func.reduce()
                 if (funcReduced == null) {
@@ -52,18 +55,18 @@ data class Application(
                 } else
                     Application(funcReduced, arg)
             }
+
+    override fun scope(): Scope = func.scope() + arg.scope()
 }
 
-data class Variable(
-        val varName: String
+class VariableReference(
+        val variable: Variable
 ) : Lambda {
-    override fun toString(): String = varName
 
-    override fun substitute(varSubst: String, subst: Lambda): Lambda =
-            if (varSubst.equals(varName)) subst else this
-}
+    override fun toString(): String = variable.alias
 
-fun valueOf(str: String): Lambda {
-    val lexer = LambdaLexer(ANTLRInputStream(str));
-    return LambdaParser(CommonTokenStream(lexer)).expression().ret;
+    override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
+            if (varSubst == variable) subst else this
+
+    override fun scope(): Scope = byVariable(variable)
 }

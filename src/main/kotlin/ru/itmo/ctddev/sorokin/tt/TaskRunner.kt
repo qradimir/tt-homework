@@ -16,17 +16,36 @@ fun assertInput(prec : () -> Boolean) {
 fun main(args: Array<String>) {
     assertInput { args.size >= 1 }
 
-    when (args[0]) {
+    when(args[0]) {
+        "interactive" -> {
+            assertInput { args.size == 1 }
+            while (true) {
+                val input = readLine() ?: return
+                when  {
+                    input.startsWith("reduce") -> runReduce(input.substring(6))
+                }
+            }
+        }
         "reduce" -> {
             assertInput { args.size == 2 }
-            var lambda = valueOf(args[1]).resolve(emptyScope())
-            var reduced = lambda.reduce()
-            while (reduced != null) {
-                lambda = reduced
-                reduced = lambda.reduce()
-            }
-            println(lambda)
+            runReduce(args[1])
         }
         else -> assertInput { false }
     }
+}
+
+fun runCommand(args: Array<String>) {
+    when (args[0]) {
+
+    }
+}
+
+fun runReduce(str : String) {
+    var lambda = valueOf(str).resolve(emptyScope())
+    var reduced = lambda.reduce()
+    while (reduced != null) {
+        lambda = reduced
+        reduced = lambda.reduce()
+    }
+    println(lambda)
 }

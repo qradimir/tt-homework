@@ -12,8 +12,8 @@ interface LambdaStructure {
 fun makeAbstraction(alias: String, body: LambdaStructure) =
         object : LambdaStructure {
             override fun resolve(scope: Scope): Lambda {
-                val param = scope.getVariable(alias) ?: Variable(alias)
-                return Abstraction(param, body.resolve(scope.concealed(alias)))
+                val param = Variable(alias)
+                return Abstraction(param, body.resolve(scope.extended(param)))
             }
         }
 

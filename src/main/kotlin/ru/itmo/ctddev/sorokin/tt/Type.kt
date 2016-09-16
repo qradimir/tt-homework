@@ -1,7 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt
 
 interface Type {
-    fun toBoundedString(): String = "(${toString()})"
     operator fun contains(typeName: String) : Boolean
     fun substitute(typeName: String, type : Type) : Type
 }
@@ -35,3 +34,4 @@ data class TApplication(val argType : Type, val resType: Type)
             = TApplication(argType.substitute(typeName, type), resType.substitute(typeName, type))
 }
 
+fun Type.toBoundedString(): String = "(${toString()})"

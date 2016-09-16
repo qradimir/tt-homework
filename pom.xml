@@ -25,13 +25,13 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>process-test-sources</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <source>target/generated-sources/antlr4</source>
+                                <source>src/main/antlr4</source>
+                                <source>src/main/kotlin</source>
+                            </sourceDirs>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -88,7 +88,7 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <kotlin.version>1.0.2-1</kotlin.version>
+        <kotlin.version>1.0.3</kotlin.version>
         <antlr.version>4.3</antlr.version>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     </properties>

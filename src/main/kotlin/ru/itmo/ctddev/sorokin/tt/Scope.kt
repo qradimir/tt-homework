@@ -22,7 +22,11 @@ class CompositeScope(private val scope1 : Scope,
             scope1.getVariable(alias) ?: scope2.getVariable(alias)
 }
 
-data class Variable(val alias : String)
+class Variable(val alias : String) {
+    override fun toString(): String {
+        return "VAR($alias)@${hashCode()}"
+    }
+}
 
 
 // helpers

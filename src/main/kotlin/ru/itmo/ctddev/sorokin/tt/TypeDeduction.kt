@@ -1,34 +1,46 @@
 package ru.itmo.ctddev.sorokin.tt
 
+import java.util.*
+
 
 data class TypeEquality(val left : Type, val right: Type)
 
 
 class TypeEqualitySetResolver(val mainLambda: Lambda) {
     private val literals : MutableMap<String, Type> = hashMapOf()
-    private val varMapping: MutableMap<Variable, Type> = hashMapOf()
+    private val varMapping: MutableMap<Variable, String> = hashMapOf()
     private val equalities: MutableSet<TypeEquality> = hashSetOf()
     private val typeNameGenerator: TypeNameGenerator = TypeNameGenerator()
 
-    val context : Map<String, Type>
-        get() = literals
+    public val resolvedTypes : Map<Variable, Type>
+        get() {
+            val ret = hashMapOf<Variable, Type>()
+            for ((variable, typeName) in varMapping) {
+                ret[variable] = literals[typeName]
+            }
+            return ret
+        }
 
-
-    fun resolve() : Type {
+    fun resolve() : Type? {
         val mainLambdaType = generate(mainLambda)
-        unify()
-        TODO()
+        if (!unify())
+            return null
+        else {
+            var retType = mainLambdaType
+            for ((key, value) in literals) {
+                retType = retType.substitute(key, value)
+            }
+            return retType
+        }
     }
 
     private fun generate(lambda: Lambda): Type =
             when (lambda) {
                 is VariableReference -> {
-                    val variable = lambda.variable
-                    varMapping.getOrPut(variable) { newTypeLiteral() }
+                    typeFor(lambda.variable)
                 }
                 is Abstraction -> {
-                    val param = lambda.param
-                    val paramType = varMapping.getOrPut(param) { newTypeLiteral() }
+                    val paramType = typeFor(lambda.param)
                     val bodyType = generate(lambda.body)
                     TApplication(paramType, bodyType)
                 }
@@ -42,53 +54,68 @@ class TypeEqualitySetResolver(val mainLambda: Lambda) {
                 else -> throw RuntimeException("UNREACHABLE")
             }
 
-    private fun newTypeLiteral() : Type {
+    private fun newTypeLiteral() : TVariable {
         val name = typeNameGenerator.next()
         val type = TVariable(name)
         literals[name] = type
         return type
     }
 
+    private fun typeFor(variable: Variable) : Type {
+        return literals[varMapping.getOrPut(variable) { newTypeLiteral().typeName}] ?: throw RuntimeException("")
+    }
+
     private fun unify() : Boolean {
         var modified = true
         while (modified) {
             modified = false
-            for(equality in equalities) {
+            for (equality in equalities) {
                 if (equality.left !is TVariable && equality.right is TVariable) {
                     equalities.remove(equality)
                     equalities.add(TypeEquality(equality.right, equality.left))
                     modified = true
+                    break
                 }
             }
-            for(equality in equalities) {
+            for (equality in equalities) {
                 if (equality.left == equality.right) {
                     equalities.remove(equality)
                     modified = true
+                    break
                 }
             }
-            for(equality in equalities) {
+            for (equality in equalities) {
                 if (equality.left is TApplication && equality.right is TApplication) {
                     equalities.remove(equality)
                     equalities.add(TypeEquality(equality.left.argType, equality.right.argType))
                     equalities.add(TypeEquality(equality.left.resType, equality.right.resType))
                     modified = true
+                    break
                 }
             }
-            for(equality in equalities) {
+            for (equality in equalities) {
                 if (equality.left is TVariable) {
                     if (equality.left.typeName in equality.right) {
                         return false
                     }
-                    for (sEquality in equalities) {
-                        if (equality == sEquality) continue
-                        equalities.remove(sEquality)
-                        equalities.add(
-                                TypeEquality(
-                                        sEquality.left.substitute(equality.left.typeName, equality.right),
-                                        sEquality.right.substitute(equality.left.typeName, equality.right)
-                                )
-                        )
-
+                    val aEqualities = HashSet(equalities)
+                    var flag = false
+                    for (aEquality in aEqualities) {
+                        if (equality == aEquality) continue
+                        if (equality.left.typeName in aEquality.left || equality.left.typeName in aEquality.right) {
+                            equalities.remove(aEquality)
+                            equalities.add(
+                                    TypeEquality(
+                                            aEquality.left.substitute(equality.left.typeName, equality.right),
+                                            aEquality.right.substitute(equality.left.typeName, equality.right)
+                                    )
+                            )
+                            flag = true
+                        }
+                    }
+                    if (flag) {
+                        modified = true
+                        break
                     }
                 }
             }

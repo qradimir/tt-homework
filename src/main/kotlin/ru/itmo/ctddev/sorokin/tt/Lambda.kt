@@ -1,10 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt
 
-import org.antlr.v4.runtime.ANTLRInputStream
-import org.antlr.v4.runtime.CommonTokenStream
-
 interface Lambda {
-    fun toBoundedString(): String = "(${toString()})"
     fun substitute(varSubst: Variable, subst: Lambda): Lambda = this
     fun reduce(): Lambda? = null
     fun scope() : Scope
@@ -70,3 +66,5 @@ class VariableReference(
 
     override fun scope(): Scope = byVariable(variable)
 }
+
+fun Lambda.toBoundedString(): String = "(${toString()})"

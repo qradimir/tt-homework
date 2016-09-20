@@ -1,67 +1,92 @@
 package ru.itmo.ctddev.sorokin.tt
 
 import java.util.*
-import kotlin.system.exitProcess
 
 const val jarFileName = "tt-1.0"
-const val usage : String =
-        "usage: java -jar $jarFileName.jar reduce <input-lambda-expression>"
+const val usage =
+        "usage: java -jar $jarFileName.jar <instruction>\n\n" +
+                "instructions:\n" +
+                "\treduce <lambda expression> \n" +
+                "\ttype <lambda expression> \n" +
+                "\tinteractive \n" +
+                "\tusage \n\n" +
+                "interactive mode:\n" +
+                "\tprovide a console for invoking instructions. type 'exit' to close app."
 
-fun assertInput(prec : () -> Boolean) {
-    if (!prec()) {
+
+inline fun validateInput(inputValidation: () -> Boolean) : Boolean {
+    if (inputValidation()) {
+        return true
+    } else {
         println(usage)
-        exitProcess(-1)
+        return false
     }
 }
 
 fun main(args: Array<String>) {
-    assertInput { args.size >= 1 }
-
-    when(args[0]) {
-        "interactive" -> {
-            assertInput { args.size == 1 }
-            while (true) {
-                val input = readLine() ?: return
-                when  {
-                    input.startsWith("reduce") -> runReduce(input.substring(6))
-                    input.startsWith("type") -> runTypeDeduction(input.substring(4))
+    if (validateInput { args.size >= 1 }) {
+        when(args[0]) {
+            "interactive" -> {
+                if (validateInput { args.size == 1 }) {
+                    while (true) {
+                        val input = readLine() ?: return
+                        when {
+                            input.startsWith("reduce") -> runReduce(input.substring(6))
+                            input.startsWith("type") -> runTypeDeduction(input.substring(4))
+                            input.startsWith("exit") -> return
+                            else -> println("Unknown instruction. Try again.")
+                        }
+                    }
                 }
             }
+            "reduce" -> {
+                if (validateInput { args.size == 2 })
+                    runReduce(args[1])
+            }
+            "type" -> {
+                if (validateInput { args.size == 2 })
+                    runTypeDeduction(args[1])
+            }
+            "usage" -> {
+                println(usage)
+            }
+            else -> println(usage)
         }
-        "reduce" -> {
-            assertInput { args.size == 2 }
-            runReduce(args[1])
-        }
-        "type" -> {
-            assertInput { args.size == 2 }
-            runTypeDeduction(args[1])
-        }
-        else -> assertInput { false }
     }
 }
 
 fun runReduce(str : String) {
-    var lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
-    var reduced = lambda.reduce()
-    while (reduced != null) {
-        lambda = reduced
-        reduced = lambda.reduce()
+    try {
+        var lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
+        var reduced = lambda.reduce()
+        while (reduced != null) {
+            lambda = reduced
+            reduced = lambda.reduce()
+        }
+        println(lambda)
+    } catch (e : Exception) {
+        println("Error occurred on 'reduce' instruction executing:")
+        e.printStackTrace()
     }
-    println(lambda)
 }
 
 fun runTypeDeduction(str : String) {
-    val lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
-    val genResult = TESGenerator(lambda).generate()
-    val resolver = TESUnifier(HashSet(genResult.equalities))
-    val substitution = resolver.resolve()
-    if (substitution != null) {
-        println("Type: ${substitution.substitute(genResult.lambdaType)}")
-        println("Context: ")
-        for ((aVar, aType) in genResult.variableTypes) {
-            println("    ${aVar} : ${substitution[aType.typeName]}")
+    try {
+        val lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
+        val genResult = TESGenerator(lambda).generate()
+        val resolver = TESUnifier(HashSet(genResult.equalities))
+        val substitution = resolver.resolve()
+        if (substitution != null) {
+            println("Type: ${substitution.substitute(genResult.lambdaType)}")
+            println("Context: ")
+            for ((aVar, aType) in genResult.variableTypes) {
+                println("    ${aVar.alias} : ${substitution[aType.typeName]}")
+            }
+        } else {
+            println("Выражение '${lambda}' не имеет типа")
         }
-    } else {
-        println("Выражение '${lambda}' не имеет типа")
+    } catch (e : Exception) {
+        println("Error occurred on 'type' instruction executing")
+        e.printStackTrace()
     }
 }

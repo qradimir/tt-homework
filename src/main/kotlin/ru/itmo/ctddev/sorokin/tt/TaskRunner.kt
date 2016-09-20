@@ -74,7 +74,10 @@ fun runTypeDeduction(str : String) {
     try {
         val lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
         val genResult = TESGenerator(lambda).generate()
-        val resolver = TESUnifier(HashSet(genResult.equalities))
+        val resolver = TESUnifier(
+                HashSet(genResult.equalities),
+                HashMap(genResult.variableTypes.mapKeys { it.value.typeName })
+        )
         val substitution = resolver.resolve()
         if (substitution != null) {
             println("Type: ${substitution.substitute(genResult.lambdaType)}")

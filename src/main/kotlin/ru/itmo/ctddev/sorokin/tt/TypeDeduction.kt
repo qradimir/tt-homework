@@ -5,8 +5,8 @@ import java.util.*
 
 data class TypeEquality(val left : Type, val right: Type)
 
-class TESUnifier(private val equalities: MutableSet<TypeEquality>) {
-    private val literals : MutableMap<String, Type> = hashMapOf()
+class TESUnifier(private val equalities: MutableSet<TypeEquality>,
+                 private val literals : MutableMap<String, Type> = hashMapOf()) {
 
     fun resolve() : TypeSubstitution? {
         if (!unify())

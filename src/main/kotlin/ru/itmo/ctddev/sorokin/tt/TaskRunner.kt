@@ -1,5 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt
 
+import java.util.*
 import kotlin.system.exitProcess
 
 const val jarFileName = "tt-1.0"
@@ -51,13 +52,14 @@ fun runReduce(str : String) {
 
 fun runTypeDeduction(str : String) {
     val lambda = valueOf(str).resolve(emptyScope())
-    val resolver = TypeEqualitySetResolver(lambda)
-    val type = resolver.resolve()
-    if (type != null) {
-        println("Type: $type")
+    val genResult = TESGenerator(lambda).generate()
+    val resolver = TESUnifier(HashSet(genResult.equalities))
+    val substitution = resolver.resolve()
+    if (substitution != null) {
+        println("Type: ${substitution.substitute(genResult.lambdaType)}")
         println("Context: ")
-        for ((aVar, aType) in resolver.resolvedTypes) {
-            println("    ${aVar} : ${aType}")
+        for ((aVar, aType) in genResult.variableTypes) {
+            println("    ${aVar} : ${substitution[aType.typeName]}")
         }
     } else {
         println("Выражение '${lambda}' не имеет типа")

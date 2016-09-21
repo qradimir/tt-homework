@@ -57,7 +57,7 @@ fun main(args: Array<String>) {
 
 fun runReduce(str : String) {
     try {
-        var lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
+        var lambda = valueOf(str).resolve(emptyScope())
         var reduced = lambda.reduce()
         while (reduced != null) {
             lambda = reduced
@@ -72,7 +72,7 @@ fun runReduce(str : String) {
 
 fun runTypeDeduction(str : String) {
     try {
-        val lambda = LambdaStructure.valueOf(str).resolve(emptyScope())
+        val lambda = valueOf(str).resolve(emptyScope())
         val genResult = TESGenerator(lambda).generate()
         val resolver = TESUnifier(
                 HashSet(genResult.equalities),

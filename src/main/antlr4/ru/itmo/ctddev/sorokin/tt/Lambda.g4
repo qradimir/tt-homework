@@ -1,5 +1,11 @@
 grammar Lambda;
 
+let_expression returns[LambdaStructure ret]
+    : LET VAR '=' def=let_expression IN expr=let_expression
+        { $ret = LambdaFactoryKt.let($VAR.text, $def.ret, $expr.ret); }
+    | expression { $ret = $expression.ret; }
+    ;
+
 expression returns[LambdaStructure ret]
     : fst=application  { $ret = $fst.ret; }
       (nxt=application { $ret = LambdaFactoryKt.application($ret, $nxt.ret); })
@@ -18,9 +24,11 @@ application returns[LambdaStructure ret]
     ;
 
 atomic returns[LambdaStructure ret]
-    : '(' expression ')' { $ret = $expression.ret; }
+    : '(' let_expression ')' { $ret = $let_expression.ret; }
     | VAR { $ret = LambdaFactoryKt.variable($VAR.text); }
     ;
 
+LET : 'let ';
+IN : ' in';
 VAR : ' '? [a-z] [a-z0-9\']* { setText(getText().trim()); };
 WS : (' ' | '\t')+ -> skip;

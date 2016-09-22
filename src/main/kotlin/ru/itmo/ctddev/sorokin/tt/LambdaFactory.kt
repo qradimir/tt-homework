@@ -26,7 +26,17 @@ fun variable(alias: String) =
                     VariableReference(scope.getVariable(alias) ?: Variable(alias))
         }
 
+fun let(alias: String, def: LambdaStructure, expr: LambdaStructure) =
+        object : LambdaStructure {
+            override fun resolve(scope: Scope): Lambda {
+                val defLambda = def.resolve(scope)
+                val variable = Variable(alias)
+                val exprLambda = expr.resolve(scope.extended(variable))
+                return Let(variable, defLambda, exprLambda)
+            }
+        }
+
 fun valueOf(str: String): LambdaStructure {
     val lexer = LambdaLexer(ANTLRInputStream(str))
-    return LambdaParser(CommonTokenStream(lexer)).expression().ret
+    return LambdaParser(CommonTokenStream(lexer)).let_expression().ret
 }

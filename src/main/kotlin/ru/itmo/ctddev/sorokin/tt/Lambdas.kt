@@ -7,8 +7,7 @@ class Abstraction(
     override fun toString(): String = '\\' + param.alias + '.' + body
 
     override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
-            if (varSubst == param) this
-            else Abstraction(param, body.substitute(varSubst, subst))
+            Abstraction(param, body.substitute(varSubst, subst))
 
     override fun reduce(): Lambda? {
         val reduced = body.reduce() ?: return null
@@ -114,6 +113,39 @@ class VariableReference(
         }
         return variable.hashCode()
     }
+}
+
+class Let(
+        val variable: Variable,
+        val definition: Lambda,
+        val expr : Lambda
+) : Lambda() {
+
+    override fun substitute(varSubst: Variable, subst: Lambda) =
+            Let(variable, definition.substitute(varSubst, subst), expr.substitute(varSubst, subst))
+
+    override fun reduce() : Lambda? {
+        val defReduced = definition.reduce() ?: return expr.substitute(variable, definition)
+
+        return Let(variable, defReduced, expr)
+    }
+
+    override fun scope() = definition.scope() + expr.scope().concealed(variable.alias)
+
+    override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
+        if (other !is Let)
+            return false
+
+        if (!definition.equals(other.definition, yourVariableStack, theirVariableStack))
+            return false
+
+        return expr.equals(other.expr,
+                VariableStack(variable, yourVariableStack),
+                VariableStack(other.variable, theirVariableStack))
+    }
+
+    override fun hashCode(variableStack: VariableStack?) =
+        31 * definition.hashCode(variableStack) + expr.hashCode(VariableStack(variable, variableStack))
 }
 
 fun Lambda.toBoundedString(): String = "(${toString()})"

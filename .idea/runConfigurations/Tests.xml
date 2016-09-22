@@ -1,0 +1,31 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Tests" type="JUnit" factoryName="JUnit" nameIsGenerated="true">
+    <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
+      <pattern>
+        <option name="PATTERN" value="ru.itmo.ctddev.sorokin.tt.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <module name="tt-homework" />
+    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+    <option name="ALTERNATIVE_JRE_PATH" />
+    <option name="PACKAGE_NAME" value="ru.itmo.ctddev.sorokin.tt" />
+    <option name="MAIN_CLASS_NAME" value="ru.itmo.ctddev.sorokin.tt.Tests" />
+    <option name="METHOD_NAME" value="" />
+    <option name="TEST_OBJECT" value="class" />
+    <option name="VM_PARAMETERS" value="-ea" />
+    <option name="PARAMETERS" value="" />
+    <option name="WORKING_DIRECTORY" value="file://$MODULE_DIR$" />
+    <option name="ENV_VARIABLES" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <option name="TEST_SEARCH_SCOPE">
+      <value defaultName="singleModule" />
+    </option>
+    <envs />
+    <patterns />
+    <method>
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Generate parser" run_configuration_type="MavenRunConfiguration" />
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

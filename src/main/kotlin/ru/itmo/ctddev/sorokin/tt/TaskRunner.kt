@@ -3,16 +3,18 @@ package ru.itmo.ctddev.sorokin.tt
 import java.util.*
 
 const val jarFileName = "tt-1.0"
-const val usage =
-        "usage: java -jar $jarFileName.jar <instruction>\n\n" +
-                "instructions:\n" +
-                "\treduce <lambda expression> \n" +
-                "\ttype <lambda expression> \n" +
-                "\tinteractive \n" +
-                "\tusage \n\n" +
-                "interactive mode:\n" +
-                "\tprovide a console for invoking instructions. type 'exit' to close app."
+const val usage = """
+usage: java -jar $jarFileName.jar <instruction>
 
+instructions:
+    reduce <lambda expression>
+    type <lambda expression>
+    interactive
+    usage
+
+interactive mode:
+    provide a console for invoking instructions. type 'exit' to close app.
+"""
 
 inline fun validateInput(inputValidation: () -> Boolean) : Boolean {
     if (inputValidation()) {

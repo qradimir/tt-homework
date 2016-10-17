@@ -1,17 +1,12 @@
 package ru.itmo.ctddev.sorokin.tt
 
-import ru.itmo.ctddev.sorokin.tt.types.TypeResolver
 import ru.itmo.ctddev.sorokin.tt.lambdas.Lambda
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
 import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
-import ru.itmo.ctddev.sorokin.tt.types.Type
-import java.util.*
 
 import org.junit.Test as test
 import kotlin.test.fail
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class Tests {
 
@@ -39,7 +34,7 @@ class Tests {
     @test
     fun testTypeDeduction() {
         for ((str, lambda, reduced, expectedType, expectedContext) in getTestData()) {
-            val type = TypeResolver().resolve(lambda)
+            val type = getTypeManager().resolve(lambda)
 
             assertEquals(expectedType, type, "Deduced type of '$lambda' mismatched")
 

@@ -1,7 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt
 
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
-import ru.itmo.ctddev.sorokin.tt.types.TypeResolver
 import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
 import ru.itmo.ctddev.sorokin.tt.lambdas.variables
 
@@ -75,7 +74,7 @@ fun runReduce(str : String) {
 fun runTypeDeduction(str : String) {
     try {
         val lambda = valueOf(str).resolve(getGlobalScope())
-        val type = TypeResolver().resolve(lambda)
+        val type = getTypeManager().resolve(lambda)
         if (type != null) {
             println("Type: $type")
             val variables = lambda.variables.filter { it in getGlobalScope() }

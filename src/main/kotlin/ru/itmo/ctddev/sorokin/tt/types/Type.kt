@@ -71,9 +71,14 @@ class Type(val name : String) {
 
 //TODO : implement lazy version
 fun Type?.unifyWith(other : Type?) : Boolean {
-    this ?: return false
+    if (this === null) {
+        return if (other === null) true else false
+    }
     other ?: return false
 
+    if (descriptor === other.descriptor) {
+        return true
+    }
     if (!literal && !other.literal) {
         val argUnified = argType.unifyWith(other.argType)
         val resUnified = resType.unifyWith(other.resType)

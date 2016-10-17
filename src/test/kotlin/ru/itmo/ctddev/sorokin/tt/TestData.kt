@@ -6,7 +6,7 @@ import ru.itmo.ctddev.sorokin.tt.types.Type
 data class LambdaTest(val asString: String,
                       val lambda: Lambda,
                       val expectedReducedLambda : Lambda,
-                      val expectedLambdaType: Type,
+                      val expectedLambdaType: Type?,
                       val context: List<Pair<Variable, Type>>)
 
 val vX : Variable
@@ -17,7 +17,8 @@ val vG : Variable
 val tests = arrayOf(
         ::testData_variable,
         ::testData_abstraction,
-        ::testData_reducible
+        ::testData_reducible,
+        ::testData_noType
     )
 
 fun getTestData() = Iterable {
@@ -48,9 +49,8 @@ fun testData_abstraction() : LambdaTest {
 
     val paramType = Type.literal("type1")
     val funcType = Type.application("typeFunc", paramType, paramType)
-    val context = listOf(Pair(param, paramType))
 
-    return LambdaTest("\\x.x", abstraction, abstraction, funcType, context)
+    return LambdaTest("\\x.x", abstraction, abstraction, funcType, emptyList())
 }
 
 fun testData_reducible() : LambdaTest {
@@ -69,4 +69,9 @@ fun testData_reducible() : LambdaTest {
 
     val context = listOf(Pair(vG, fType))
     return LambdaTest("(\\f.\\x.f x)g", reducible, reduced, fType, context)
+}
+
+fun testData_noType() : LambdaTest {
+    val lambda = Application(VariableReference(vX), VariableReference(vX))
+    return LambdaTest("x x", lambda, lambda, null, emptyList())
 }

@@ -3,10 +3,12 @@ package ru.itmo.ctddev.sorokin.tt
 import ru.itmo.ctddev.sorokin.tt.lambdas.Lambda
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
 import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
+import ru.itmo.ctddev.sorokin.tt.types.unifyWith
 
 import org.junit.Test as test
 import kotlin.test.fail
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class Tests {
 
@@ -32,15 +34,16 @@ class Tests {
     }
 
     @test
+    //TODO: escape #unifyWith
     fun testTypeDeduction() {
         for ((str, lambda, reduced, expectedType, expectedContext) in getTestData()) {
             val type = getTypeManager().resolve(lambda)
 
-            assertEquals(expectedType, type, "Deduced type of '$lambda' mismatched")
+            assertTrue(expectedType.unifyWith(type), "Deduced type of '$lambda' mismatched")
 
             for ((variable, expected) in expectedContext) {
                 val actual = getTypeManager().typeFor(variable)
-                assertEquals(expected, actual, "Deduced variable ($variable) type mismatched")
+                assertTrue(expected.unifyWith(actual), "Deduced variable ($variable) type mismatched")
             }
         }
     }

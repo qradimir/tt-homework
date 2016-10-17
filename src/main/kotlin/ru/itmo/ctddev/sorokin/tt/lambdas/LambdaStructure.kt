@@ -1,4 +1,4 @@
-package ru.itmo.ctddev.sorokin.tt
+package ru.itmo.ctddev.sorokin.tt.lambdas
 
 
 interface LambdaStructure {

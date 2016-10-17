@@ -1,6 +1,9 @@
 package ru.itmo.ctddev.sorokin.tt
 
-import java.util.*
+import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
+import ru.itmo.ctddev.sorokin.tt.types.TypeResolver
+import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
+import ru.itmo.ctddev.sorokin.tt.lambdas.variables
 
 const val jarFileName = "tt-1.0"
 const val usage = """
@@ -27,6 +30,7 @@ inline fun validateInput(inputValidation: () -> Boolean) : Boolean {
 
 fun main(args: Array<String>) {
     if (validateInput { args.size >= 1 }) {
+        Session.startNewSession()
         when(args[0]) {
             "interactive" -> {
                 if (validateInput { args.size == 1 }) {
@@ -38,6 +42,7 @@ fun main(args: Array<String>) {
                             input.startsWith("exit") -> return
                             else -> println("Unknown instruction. Try again.")
                         }
+                        Session.startNewSession()
                     }
                 }
             }
@@ -59,13 +64,8 @@ fun main(args: Array<String>) {
 
 fun runReduce(str : String) {
     try {
-        var lambda = valueOf(str).resolve(emptyScope())
-        var reduced = lambda.reduce()
-        while (reduced != null) {
-            lambda = reduced
-            reduced = lambda.reduce()
-        }
-        println(lambda)
+        val lambda = valueOf(str).resolve(getGlobalScope())
+        println(lambda.reduceFully())
     } catch (e : Exception) {
         println("Error occurred on 'reduce' instruction executing:")
         e.printStackTrace()
@@ -74,21 +74,18 @@ fun runReduce(str : String) {
 
 fun runTypeDeduction(str : String) {
     try {
-        val lambda = valueOf(str).resolve(emptyScope())
-        val genResult = TESGenerator(lambda).generate()
-        val resolver = TESUnifier(
-                HashSet(genResult.equalities),
-                HashMap(genResult.variableTypes.mapKeys { it.value.typeName })
-        )
-        val substitution = resolver.resolve()
-        if (substitution != null) {
-            println("Type: ${substitution.substitute(genResult.lambdaType)}")
-            println("Context: ")
-            for ((aVar, aType) in genResult.variableTypes) {
-                println("    ${aVar.alias} : ${substitution[aType.typeName]}")
+        val lambda = valueOf(str).resolve(getGlobalScope())
+        val type = TypeResolver().resolve(lambda)
+        if (type != null) {
+            println("Type: $type")
+            val variables = lambda.variables.filter { it in getGlobalScope() }
+            val empty = variables.isEmpty()
+            println("Context: " + if (empty) "empty" else "")
+            for (variable in variables) {
+                println("    $variable : ${getTypeManager().typeFor(variable)}")
             }
         } else {
-            println("Выражение '${lambda}' не имеет типа")
+            println("No type deduced")
         }
     } catch (e : Exception) {
         println("Error occurred on 'type' instruction executing")

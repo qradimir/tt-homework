@@ -1,5 +1,10 @@
 package ru.itmo.ctddev.sorokin.tt
 
+import ru.itmo.ctddev.sorokin.tt.types.TypeResolver
+import ru.itmo.ctddev.sorokin.tt.lambdas.Lambda
+import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
+import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
+import ru.itmo.ctddev.sorokin.tt.types.Type
 import java.util.*
 
 import org.junit.Test as test
@@ -12,10 +17,10 @@ class Tests {
 
     @test
     fun testParser() {
-        for ((givenLambda, expectedLambda) in tests) {
+        for ((givenLambda, expectedLambda) in getTestData()) {
             val actual: Lambda
             try {
-                actual = valueOf(givenLambda).resolve(testScope)
+                actual = valueOf(givenLambda).resolve(getGlobalScope())
             } catch (e: Exception) {
                 fail("Got exception '${e.message}' on parsing '$givenLambda'")
             }
@@ -25,42 +30,22 @@ class Tests {
 
     @test
     fun testReduce() {
-        for ((str, aLambda, reducedLambda) in tests) {
-            var lambda = aLambda
-            var reduced = lambda.reduce()
-            while (reduced != null) {
-                lambda = reduced
-                reduced = lambda.reduce()
-            }
-            val actual = lambda
-            assertEquals(actual, reducedLambda, "Fails on reducing '$aLambda'")
+        for ((str, lambda, reducedLambda) in getTestData()) {
+            val actual = lambda.reduceFully()
+            assertEquals(actual, reducedLambda, "Fails on reducing '$lambda'")
         }
     }
 
     @test
     fun testTypeDeduction() {
-        for ((str, lambda, reduced, expectedType, expectedContext) in tests) {
-            val genResult = TESGenerator(lambda).generate()
-            val resolver = TESUnifier(
-                    HashSet(genResult.equalities),
-                    HashMap(genResult.variableTypes.mapKeys { it.value.typeName })
-            )
+        for ((str, lambda, reduced, expectedType, expectedContext) in getTestData()) {
+            val type = TypeResolver().resolve(lambda)
 
-            val substitution = assertNotNull(resolver.resolve(), "Fails on type deducing '$lambda'")
+            assertEquals(expectedType, type, "Deduced type of '$lambda' mismatched")
 
-            val matchings = hashMapOf<String, Type>()
-            val actual = substitution.substitute(genResult.lambdaType)
-            assertTrue(expectedType.match(actual, matchings), "Deduced type of '$lambda' mismatched")
-
-            for ((variable, expectedVariableType) in expectedContext) {
-                assertTrue(variable in genResult.variableTypes.keys,
-                        "Missed variable ($variable) in '$lambda' type context")
-                val generatedVariableType = assertNotNull(genResult.variableTypes[variable],
-                        "Missed variable ($variable) gen. type in '$lambda' type context")
-                val actualVariableType = assertNotNull(substitution[generatedVariableType.typeName],
-                        "Missed variable ($variable) type in '$lambda' type context")
-                assertTrue(expectedVariableType.match(actualVariableType, matchings),
-                        "Deduced variable ($variable) type mismatched")
+            for ((variable, expected) in expectedContext) {
+                val actual = getTypeManager().typeFor(variable)
+                assertEquals(expected, actual, "Deduced variable ($variable) type mismatched")
             }
         }
     }

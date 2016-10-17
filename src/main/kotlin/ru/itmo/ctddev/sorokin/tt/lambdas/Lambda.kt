@@ -1,9 +1,9 @@
-package ru.itmo.ctddev.sorokin.tt
+package ru.itmo.ctddev.sorokin.tt.lambdas
 
 abstract class Lambda {
     open fun substitute(varSubst: Variable, subst: Lambda): Lambda = this
     open fun reduce(): Lambda? = null
-    open fun scope() : Scope = emptyScope()
+    open fun countVariables(variables: MutableSet<Variable>) {}
 
     abstract fun equals(other : Lambda,
                         yourVariableStack: VariableStack?,

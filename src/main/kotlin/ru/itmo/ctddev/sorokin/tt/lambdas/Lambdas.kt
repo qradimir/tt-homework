@@ -1,4 +1,6 @@
-package ru.itmo.ctddev.sorokin.tt
+package ru.itmo.ctddev.sorokin.tt.lambdas
+
+import java.util.*
 
 class Abstraction(
         val param: Variable,
@@ -14,7 +16,10 @@ class Abstraction(
         return Abstraction(param, reduced)
     }
 
-    override fun scope(): Scope = body.scope().concealed(param.alias)
+    override fun countVariables(variables: MutableSet<Variable>) {
+        variables.add(param)
+        body.countVariables(variables)
+    }
 
     override fun equals(other: Lambda,
                         yourVariableStack: VariableStack?,
@@ -60,7 +65,10 @@ class Application(
                     Application(funcReduced, arg)
             }
 
-    override fun scope(): Scope = func.scope() + arg.scope()
+    override fun countVariables(variables: MutableSet<Variable>) {
+        func.countVariables(variables)
+        arg.countVariables(variables)
+    }
 
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
         if (other !is Application)
@@ -83,8 +91,6 @@ class VariableReference(
     override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
             if (varSubst == variable) subst else this
 
-    override fun scope(): Scope = byVariable(variable)
-
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
         if (other !is VariableReference)
             return false
@@ -99,6 +105,10 @@ class VariableReference(
             theirStack = theirStack.prev
         }
         return variable === other.variable
+    }
+
+    override fun countVariables(variables: MutableSet<Variable>) {
+        variables.add(variable)
     }
 
     override fun hashCode(variableStack: VariableStack?): Int {
@@ -130,8 +140,6 @@ class Let(
         return Let(variable, defReduced, expr)
     }
 
-    override fun scope() = definition.scope() + expr.scope().concealed(variable.alias)
-
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
         if (other !is Let)
             return false
@@ -149,3 +157,20 @@ class Let(
 }
 
 fun Lambda.toBoundedString(): String = "(${toString()})"
+
+val Lambda.variables : Set<Variable>
+    get() {
+        val vars = HashSet<Variable>()
+        countVariables(vars)
+        return vars
+    }
+
+fun Lambda.reduceFully() : Lambda {
+    var lambda = this
+    var reduced = lambda.reduce()
+    while (reduced != null) {
+        lambda = reduced
+        reduced = lambda.reduce()
+    }
+    return lambda
+}

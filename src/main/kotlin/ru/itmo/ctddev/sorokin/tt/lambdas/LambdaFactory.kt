@@ -1,13 +1,15 @@
-package ru.itmo.ctddev.sorokin.tt
+package ru.itmo.ctddev.sorokin.tt.lambdas
 
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
+import ru.itmo.ctddev.sorokin.tt.parser.LambdaLexer
+import ru.itmo.ctddev.sorokin.tt.parser.LambdaParser
 
 fun abstraction(alias: String, body: LambdaStructure) =
         object : LambdaStructure {
             override fun resolve(scope: Scope): Lambda {
                 val param = Variable(alias)
-                return Abstraction(param, body.resolve(scope.extended(param)))
+                return Abstraction(param, body.resolve(AbstractionScope(param, scope)))
             }
         }
 
@@ -15,7 +17,7 @@ fun application(func: LambdaStructure, arg: LambdaStructure) =
         object : LambdaStructure {
             override fun resolve(scope: Scope): Lambda {
                 val funcLambda = func.resolve(scope)
-                val argLambda = arg.resolve(scope + funcLambda.scope())
+                val argLambda = arg.resolve(scope)
                 return Application(funcLambda, argLambda)
             }
         }
@@ -23,7 +25,7 @@ fun application(func: LambdaStructure, arg: LambdaStructure) =
 fun variable(alias: String) =
         object : LambdaStructure {
             override fun resolve(scope: Scope): Lambda =
-                    VariableReference(scope.getVariable(alias) ?: Variable(alias))
+                    VariableReference(scope.findVariable(alias))
         }
 
 fun let(alias: String, def: LambdaStructure, expr: LambdaStructure) =
@@ -31,7 +33,7 @@ fun let(alias: String, def: LambdaStructure, expr: LambdaStructure) =
             override fun resolve(scope: Scope): Lambda {
                 val defLambda = def.resolve(scope)
                 val variable = Variable(alias)
-                val exprLambda = expr.resolve(scope.extended(variable))
+                val exprLambda = expr.resolve(AbstractionScope(variable, scope))
                 return Let(variable, defLambda, exprLambda)
             }
         }

@@ -12,9 +12,7 @@ let_expression returns[LambdaStructure ret]
     ;
 
 expression returns[LambdaStructure ret]
-    : fst=application  { $ret = $fst.ret; }
-      (nxt=application { $ret = LambdaFactoryKt.application($ret, $nxt.ret); })
-      lst=abstraction  { $ret = LambdaFactoryKt.application($ret, $lst.ret); }
+    : application abstraction  { $ret = LambdaFactoryKt.application($application.ret, $abstraction.ret); }
     | application { $ret = $application.ret; }
     | abstraction { $ret = $abstraction.ret; }
     ;

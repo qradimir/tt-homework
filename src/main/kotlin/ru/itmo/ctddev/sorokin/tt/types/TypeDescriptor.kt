@@ -13,7 +13,7 @@ sealed class TypeDescriptor(val params: List<Type>) {
 
 fun kindEquals(fst : TypeDescriptor, snd : TypeDescriptor) = when(fst) {
     is TypeDescriptor.TApplication -> snd is TypeDescriptor.TApplication
-    is TypeDescriptor.Constant -> snd is TypeDescriptor.Constant
+    is TypeDescriptor.Constant -> snd is TypeDescriptor.Constant && fst.name == snd.name
 }
 
 private fun Type.toStringInLeftChild()

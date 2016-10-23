@@ -5,7 +5,7 @@ import java.util.*
 
 class TypeManager {
 
-    val nameGenerator = object : Iterator<String> {
+    private val nameGenerator = object : Iterator<String> {
         private var index = 0
 
         override fun hasNext() = true
@@ -14,38 +14,90 @@ class TypeManager {
     }
 
     private val varTypes = HashMap<Variable, Type>()
+    private val descriptors = HashMap<Type, TypeDescriptor>()
 
-    fun assign(variable: Variable, type : Type) {
-        varTypes[variable] = type
+    fun typeFor(variable: Variable) = varTypes.getOrPut(variable) { Type(this) }
+
+    fun createType(descriptor: TypeDescriptor? = null) : Type {
+        val type = Type(this)
+        if (descriptor != null) descriptors[type] = descriptor
+        return type
     }
 
-    fun typeFor(variable: Variable) = varTypes[variable]
+    val descriptorMap : Map<Type, TypeDescriptor>
+        get() = descriptors
 
-    fun createTypeFor(variable: Variable)
-            = varTypes.getOrPut(variable) { Type(nameGenerator.next()) }
+    fun createTypeApplication(argType : Type, resType: Type)
+            = createType(TypeDescriptor.TApplication(argType, resType))
 
-    fun createLiteral() = Type(nameGenerator.next())
-    fun createApplication(arg: Type, res: Type) = Type.application(nameGenerator.next(), arg, res)
+    fun equalize(fst: Type, snd: Type, unify : Boolean = false) : Boolean {
+        if (fst.backingType === snd.backingType)
+            return true
+
+        val fstDesc = descriptors[fst.backingType]
+        val sndDesc = descriptors[snd.backingType]
+
+        if (fstDesc != null && sndDesc != null) {
+            if (!kindEquals(fstDesc, sndDesc))
+                return false
+            assert(fstDesc.params.size == sndDesc.params.size)
+
+            for (i in fstDesc.params.indices) {
+                if (!equalize(fstDesc.params[i], sndDesc.params[i], unify)) {
+                    return false
+                }
+            }
+            return true
+        }
+        if (unify) {
+            if (fstDesc == null) {
+                if (fst in snd) {
+                    return false
+                }
+                fst.backingType.bType = snd.backingType
+                return true
+            }
+            if (sndDesc == null) {
+                if (snd in fst) {
+                    return false
+                }
+                snd.backingType.bType = fst.backingType
+                return true
+            }
+        }
+        return false
+    }
+
+    fun unify(fst: Type, snd: Type) = equalize(fst, snd, true)
 
     fun resolve(lambda: Lambda) : Type? {
         when (lambda) {
             is VariableReference -> {
-                return createTypeFor(lambda.variable)
+                return typeFor(lambda.variable)
             }
             is Abstraction -> {
-                val paramType = createTypeFor(lambda.param)
+                val paramType = typeFor(lambda.param)
                 val bodyType = resolve(lambda.body) ?: return null
-                return createApplication(paramType, bodyType)
+                return createTypeApplication(paramType, bodyType)
             }
             is Application -> {
                 val funcType = resolve(lambda.func) ?: return null
                 val argType = resolve(lambda.arg) ?: return null
-                val resType = createLiteral()
-                val unifyRes = funcType.unifyWith(createApplication(argType, resType))
+                val resType = createType()
+                val unifyRes = funcType.unifyWith(createTypeApplication(argType, resType))
                 return if (unifyRes) resType else null
             }
             is Let -> throw RuntimeException("'let' lambdas doesn't supported")
             else -> throw RuntimeException("unexpected unknown lambda")
+        }
+    }
+
+    internal fun concrete(type : Type) {
+        val desc = descriptors[type.backingType]
+        if (desc === null) {
+            descriptors[type.backingType] = TypeDescriptor.Constant(nameGenerator.next())
+        } else {
+            desc.params.forEach { concrete(it) }
         }
     }
 }

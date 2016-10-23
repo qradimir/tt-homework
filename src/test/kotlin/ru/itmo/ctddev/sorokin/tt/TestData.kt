@@ -2,6 +2,7 @@ package ru.itmo.ctddev.sorokin.tt
 
 import ru.itmo.ctddev.sorokin.tt.lambdas.*
 import ru.itmo.ctddev.sorokin.tt.types.Type
+import ru.itmo.ctddev.sorokin.tt.types.TypeManager
 
 data class LambdaTest(val asString: String,
                       val lambda: Lambda,
@@ -13,6 +14,8 @@ val vX : Variable
     get() = getGlobalScope().findVariable("x")
 val vG : Variable
     get() = getGlobalScope().findVariable("g")
+val tm : TypeManager
+    get() = getTypeManager()
 
 val tests = arrayOf(
         ::testData_variable,
@@ -37,7 +40,7 @@ fun getTestData() = Iterable {
 fun testData_variable() : LambdaTest {
     val x = VariableReference(vX)
 
-    val type = Type.literal("type1")
+    val type = tm.createType()
     val context = listOf(Pair(vX, type))
 
     return LambdaTest("x", x, x, type, context)
@@ -47,8 +50,8 @@ fun testData_abstraction() : LambdaTest {
     val param = Variable("x")
     val abstraction = Abstraction(param, VariableReference(param))
 
-    val paramType = Type.literal("type1")
-    val funcType = Type.application("typeFunc", paramType, paramType)
+    val paramType = tm.createType()
+    val funcType = tm.createTypeApplication(paramType, paramType)
 
     return LambdaTest("\\x.x", abstraction, abstraction, funcType, emptyList())
 }
@@ -64,8 +67,8 @@ fun testData_reducible() : LambdaTest {
     // reduced : \x.g x
     val reduced = Abstraction(xParam, Application(VariableReference(vG), VariableReference(xParam)))
 
-    val xType = Type.literal("typeX")
-    val fType = Type.application("typeFunc", xType, Type.literal("typeRes"))
+    val xType = tm.createType()
+    val fType = tm.createTypeApplication(xType, tm.createType())
 
     val context = listOf(Pair(vG, fType))
     return LambdaTest("(\\f.\\x.f x)g", reducible, reduced, fType, context)

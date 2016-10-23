@@ -1,9 +1,12 @@
 package ru.itmo.ctddev.sorokin.tt.lambdas
 
+import java.util.*
+
 abstract class Lambda {
     open fun substitute(varSubst: Variable, subst: Lambda): Lambda = this
     open fun reduce(): Lambda? = null
-    open fun countVariables(variables: MutableSet<Variable>) {}
+    open fun countVariables(variables: MutableSet<Variable>,
+                            excludes : MutableSet<Variable> = HashSet()) {}
 
     abstract fun equals(other : Lambda,
                         yourVariableStack: VariableStack?,

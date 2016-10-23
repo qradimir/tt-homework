@@ -77,7 +77,7 @@ fun runTypeDeduction(str : String) {
         val type = getTypeManager().resolve(lambda)
         if (type != null) {
             println("Type: ${type.concrete()}")
-            val variables = lambda.variables.filter { it in getGlobalScope() }
+            val variables = lambda.variables
             val empty = variables.isEmpty()
             println("Context: " + if (empty) "empty" else "")
             for (variable in variables) {

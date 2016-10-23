@@ -16,9 +16,10 @@ class Abstraction(
         return Abstraction(param, reduced)
     }
 
-    override fun countVariables(variables: MutableSet<Variable>) {
-        variables.add(param)
-        body.countVariables(variables)
+    override fun countVariables(variables: MutableSet<Variable>,
+                                excludes: MutableSet<Variable>) {
+        excludes.add(param)
+        body.countVariables(variables, excludes)
     }
 
     override fun equals(other: Lambda,
@@ -65,9 +66,10 @@ class Application(
                     Application(funcReduced, arg)
             }
 
-    override fun countVariables(variables: MutableSet<Variable>) {
-        func.countVariables(variables)
-        arg.countVariables(variables)
+    override fun countVariables(variables: MutableSet<Variable>,
+                                excludes: MutableSet<Variable>) {
+        func.countVariables(variables, excludes)
+        arg.countVariables(variables, excludes)
     }
 
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
@@ -107,8 +109,10 @@ class VariableReference(
         return variable === other.variable
     }
 
-    override fun countVariables(variables: MutableSet<Variable>) {
-        variables.add(variable)
+    override fun countVariables(variables: MutableSet<Variable>, excludes: MutableSet<Variable>) {
+        if (variable !in excludes) {
+            variables.add(variable)
+        }
     }
 
     override fun hashCode(variableStack: VariableStack?): Int {
@@ -150,6 +154,12 @@ class Let(
         return expr.equals(other.expr,
                 VariableStack(variable, yourVariableStack),
                 VariableStack(other.variable, theirVariableStack))
+    }
+
+    override fun countVariables(variables: MutableSet<Variable>, excludes: MutableSet<Variable>) {
+        excludes.add(variable)
+        definition.countVariables(variables, excludes)
+        expr.countVariables(variables, excludes)
     }
 
     override fun hashCode(variableStack: VariableStack?) =

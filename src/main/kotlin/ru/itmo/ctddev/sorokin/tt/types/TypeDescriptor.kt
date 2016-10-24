@@ -16,5 +16,16 @@ fun kindEquals(fst : TypeDescriptor, snd : TypeDescriptor) = when(fst) {
     is TypeDescriptor.Constant -> snd is TypeDescriptor.Constant && fst.name == snd.name
 }
 
+fun TypeDescriptor.clone(params: List<Type>) = when(this) {
+    is TypeDescriptor.TApplication -> {
+        assert(params.size == 2)
+        TypeDescriptor.TApplication(params[0], params[1])
+    }
+    is TypeDescriptor.Constant -> {
+        assert(params.size == 0)
+        TypeDescriptor.Constant(name)
+    }
+}
+
 private fun Type.toStringInLeftChild()
         = if (descriptor is TypeDescriptor.TApplication) "(${toString()})" else toString()

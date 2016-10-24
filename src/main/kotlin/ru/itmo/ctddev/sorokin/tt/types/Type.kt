@@ -1,5 +1,7 @@
 package ru.itmo.ctddev.sorokin.tt.types
 
+import java.util.*
+
 class Type internal constructor(val tm : TypeManager) {
     internal var bType: Type = this
 
@@ -39,3 +41,19 @@ operator fun Type.contains(other : Type) : Boolean {
     }
     return false
 }
+
+fun Type.countVariables(variables : MutableSet<Type>) {
+    val desc = descriptor
+    if (desc == null) {
+        variables.add(this)
+    } else {
+        desc.params.forEach { it.countVariables(variables) }
+    }
+}
+
+val Type.variables : Set<Type>
+    get() {
+        val vars = HashSet<Type>()
+        countVariables(vars)
+        return vars
+    }

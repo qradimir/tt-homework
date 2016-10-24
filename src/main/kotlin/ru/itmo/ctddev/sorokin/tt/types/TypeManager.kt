@@ -13,10 +13,13 @@ class TypeManager {
         override fun next() = "t" + index++
     }
 
-    private val varTypes = HashMap<Variable, Type>()
+    private val varTypes = HashMap<Variable, PolyType>()
     private val descriptors = HashMap<Type, TypeDescriptor>()
 
-    fun typeFor(variable: Variable) = varTypes.getOrPut(variable) { Type(this) }
+    fun typeFor(variable: Variable) : Type {
+        val poly = varTypes.getOrPut(variable) { PolyType(createType(), emptySet()) }
+        return poly.mono()
+    }
 
     fun createType(descriptor: TypeDescriptor? = null) : Type {
         val type = Type(this)
@@ -87,7 +90,18 @@ class TypeManager {
                 val unifyRes = funcType.unifyWith(createTypeApplication(argType, resType))
                 return if (unifyRes) resType else null
             }
-            is Let -> throw RuntimeException("'let' lambdas doesn't supported")
+            is Let -> {
+                val defType = resolve(lambda.definition) ?: return null
+                val polymorphicTypes = defType.variables.filter { type ->
+                    lambda.definition.variables.forEach {
+                        if (type in varTypes[it]!!.type)
+                            return@filter false
+                    }
+                    true
+                }
+                varTypes[lambda.variable] = PolyType(defType, polymorphicTypes.toSet())
+                return resolve(lambda.expr)
+            }
             else -> throw RuntimeException("unexpected unknown lambda")
         }
     }

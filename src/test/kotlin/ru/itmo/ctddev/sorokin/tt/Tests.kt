@@ -43,7 +43,8 @@ class Tests {
                 assertTrue(expectedType unifyWith typeNN, "Deduced type of '$lambda' mismatched")
 
                 for ((variable, expected) in expectedContext) {
-                    val actual = getTypeManager().typeFor(variable)
+                    val actual = assertNotNull(getTypeManager().typeFor(variable),
+                            "Type of variable ($variable should be resolved")
                     expected.concrete()
                     assertTrue(expected.unifyWith(actual), "Deduced variable ($variable) type mismatched")
                 }

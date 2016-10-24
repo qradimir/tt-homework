@@ -6,8 +6,6 @@
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <envs />
-    <method>
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Build" run_configuration_type="MavenRunConfiguration" />
-    </method>
+    <method />
   </configuration>
 </component>

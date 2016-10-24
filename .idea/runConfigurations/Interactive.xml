@@ -12,9 +12,6 @@
     <option name="PASS_PARENT_ENVS" value="true" />
     <module name="tt-homework" />
     <envs />
-    <method>
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Generate parser" run_configuration_type="MavenRunConfiguration" />
-      <option name="Make" enabled="true" />
-    </method>
+    <method />
   </configuration>
 </component>

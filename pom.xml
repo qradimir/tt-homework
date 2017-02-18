@@ -5,8 +5,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ru.itmo.ctddev.sorokin</groupId>
-    <artifactId>tt</artifactId>
+    <artifactId>tt-homework</artifactId>
     <version>1.0</version>
+
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-kotlin-kotlin-eap-1.1</id>
+            <name>bintray</name>
+            <url>http://dl.bintray.com/kotlin/kotlin-eap-1.1</url>
+        </repository>
+    </repositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>bintray-kotlin-kotlin-eap-1.1</id>
+            <name>bintray-plugins</name>
+            <url>http://dl.bintray.com/kotlin/kotlin-eap-1.1</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+
     <build>
         <sourceDirectory>src/main/kotlin</sourceDirectory>
         <testSourceDirectory>src/test/kotlin</testSourceDirectory>
@@ -112,7 +135,7 @@
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <kotlin.version>1.0.4</kotlin.version>
+        <kotlin.version>1.1.0-rc-91</kotlin.version>
         <antlr.version>4.3</antlr.version>
         <junit.version>4.11</junit.version>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>

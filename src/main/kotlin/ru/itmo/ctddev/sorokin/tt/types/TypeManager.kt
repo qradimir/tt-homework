@@ -7,13 +7,7 @@ import java.util.*
 
 class TypeManager {
 
-    private val nameGenerator = object : Iterator<String> {
-        private var index = 0
-
-        override fun hasNext() = true
-
-        override fun next() = "t" + index++
-    }
+    private val nameGenerator = NameGenerator("t")
 
     private val varTypes = HashMap<Variable, PolyType>()
     private val descriptors = HashMap<Type, TypeDescriptor>()

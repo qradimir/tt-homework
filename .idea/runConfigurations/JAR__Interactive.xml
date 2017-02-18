@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="JAR: Interactive" type="JarApplication" factoryName="JAR Application">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
-    <option name="JAR_PATH" value="$PROJECT_DIR$/target/tt-1.0.jar" />
+    <option name="JAR_PATH" value="$PROJECT_DIR$/target/tt-homework-1.0.jar" />
     <option name="PROGRAM_PARAMETERS" value="interactive" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="ALTERNATIVE_JRE_PATH" />

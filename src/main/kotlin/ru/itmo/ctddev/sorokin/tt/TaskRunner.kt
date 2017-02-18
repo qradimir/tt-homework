@@ -1,5 +1,7 @@
 package ru.itmo.ctddev.sorokin.tt
 
+import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
+import ru.itmo.ctddev.sorokin.tt.constraints.buildConstraint
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
 import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
 import ru.itmo.ctddev.sorokin.tt.lambdas.variables
@@ -38,6 +40,7 @@ fun main(args: Array<String>) {
                         when {
                             input.startsWith("reduce") -> runReduce(input.substring(6))
                             input.startsWith("type") -> runTypeDeduction(input.substring(4))
+                            input.startsWith("constraint") -> runConstraintBuilding(input.substring(10))
                             input.startsWith("exit") -> return
                             else -> println("Unknown instruction. Try again.")
                         }
@@ -52,6 +55,10 @@ fun main(args: Array<String>) {
             "type" -> {
                 if (validateInput { args.size == 2 })
                     runTypeDeduction(args[1])
+            }
+            "constraint" -> {
+                if (validateInput { args.size == 2 })
+                    runConstraintBuilding(args[1])
             }
             "usage" -> {
                 println(usage)
@@ -88,6 +95,19 @@ fun runTypeDeduction(str : String) {
         }
     } catch (e : Exception) {
         println("Error occurred on 'type' instruction executing")
+        e.printStackTrace()
+    }
+}
+
+val typeNameGenerator = NameGenerator("'t")
+
+fun runConstraintBuilding(str : String) {
+    try {
+        val lambda = valueOf(str).resolve(getGlobalScope())
+        val constraint = lambda.buildConstraint(typeNameGenerator)
+        println(constraint)
+    } catch (e: Exception) {
+        println("Error occurred on 'constraint' instruction executing")
         e.printStackTrace()
     }
 }

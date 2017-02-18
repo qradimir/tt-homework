@@ -1,6 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt
 
-import ru.itmo.ctddev.sorokin.tt.lambdas.GlobalScope
+import ru.itmo.ctddev.sorokin.tt.common.GlobalScope
 import ru.itmo.ctddev.sorokin.tt.types.TypeManager
 
 class Session {

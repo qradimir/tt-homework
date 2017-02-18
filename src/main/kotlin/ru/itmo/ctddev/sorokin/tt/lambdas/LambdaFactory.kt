@@ -2,8 +2,15 @@ package ru.itmo.ctddev.sorokin.tt.lambdas
 
 import org.antlr.v4.runtime.ANTLRInputStream
 import org.antlr.v4.runtime.CommonTokenStream
+import ru.itmo.ctddev.sorokin.tt.common.AbstractionScope
+import ru.itmo.ctddev.sorokin.tt.common.Scope
+import ru.itmo.ctddev.sorokin.tt.common.Structure
+import ru.itmo.ctddev.sorokin.tt.common.Variable
 import ru.itmo.ctddev.sorokin.tt.parser.LambdaLexer
 import ru.itmo.ctddev.sorokin.tt.parser.LambdaParser
+
+
+typealias LambdaStructure = Structure<Lambda>
 
 fun abstraction(alias: String, body: LambdaStructure) =
         object : LambdaStructure {

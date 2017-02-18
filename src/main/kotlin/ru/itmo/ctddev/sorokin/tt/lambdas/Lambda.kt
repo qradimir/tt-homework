@@ -1,5 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt.lambdas
 
+import ru.itmo.ctddev.sorokin.tt.common.Variable
 import java.util.*
 
 abstract class Lambda {

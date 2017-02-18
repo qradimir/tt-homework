@@ -1,5 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt
 
+import ru.itmo.ctddev.sorokin.tt.common.Variable
 import ru.itmo.ctddev.sorokin.tt.lambdas.*
 import ru.itmo.ctddev.sorokin.tt.types.Type
 import ru.itmo.ctddev.sorokin.tt.types.TypeManager

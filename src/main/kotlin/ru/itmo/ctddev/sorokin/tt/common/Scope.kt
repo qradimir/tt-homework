@@ -1,4 +1,4 @@
-package ru.itmo.ctddev.sorokin.tt.lambdas
+package ru.itmo.ctddev.sorokin.tt.common
 
 import java.util.*
 
@@ -7,7 +7,7 @@ interface Scope {
     operator fun contains(variable : Variable) : Boolean
 }
 
-class GlobalScope : Scope{
+class GlobalScope : Scope {
     val variables = HashMap<String, Variable>()
 
     override fun findVariable(name: String)

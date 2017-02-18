@@ -1,5 +1,7 @@
 package ru.itmo.ctddev.sorokin.tt.types
 
+import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
+import ru.itmo.ctddev.sorokin.tt.common.Variable
 import ru.itmo.ctddev.sorokin.tt.lambdas.*
 import java.util.*
 

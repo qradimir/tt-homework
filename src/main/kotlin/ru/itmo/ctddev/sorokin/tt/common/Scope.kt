@@ -28,3 +28,15 @@ class AbstractionScope(
     override fun contains(variable: Variable)
         = variable == parameter || variable in parentScope
 }
+
+class MultipleAbstractionScope(
+        private val parameters: List<Variable>,
+        private val parentScope: Scope
+) : Scope {
+
+    override fun findVariable(name: String)
+        = parameters.find { it.alias == name } ?: parentScope.findVariable(name)
+
+    override fun contains(variable: Variable) =
+            variable in parameters || variable in parentScope
+}

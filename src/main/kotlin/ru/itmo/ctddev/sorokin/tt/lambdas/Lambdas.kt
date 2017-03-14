@@ -185,3 +185,11 @@ fun Lambda.reduceFully() : Lambda {
     }
     return lambda
 }
+
+// util factories
+
+fun Variable.mkRef() = VariableReference(this)
+infix fun Lambda.on(arg: Lambda) = Application(this, arg)
+infix fun Variable.dot(body: Lambda) = Abstraction(this, body)
+fun Variable.identity() = this dot this.mkRef()
+fun Variable.letIn(def: Lambda, expr: Lambda) = Let(this, def, expr)

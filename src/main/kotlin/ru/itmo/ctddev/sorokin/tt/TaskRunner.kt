@@ -4,7 +4,6 @@ import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
 import ru.itmo.ctddev.sorokin.tt.constraints.buildConstraint
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
 import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
-import ru.itmo.ctddev.sorokin.tt.lambdas.variables
 
 const val jarFileName = "tt-1.0"
 const val usage = """

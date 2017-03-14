@@ -1,7 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt.lambdas
 
 import ru.itmo.ctddev.sorokin.tt.common.Variable
-import java.util.*
 
 class Abstraction(
         val param: Variable,
@@ -9,18 +8,22 @@ class Abstraction(
 ) : Lambda() {
     override fun toString(): String = '\\' + param.alias + '.' + body
 
-    override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
-            Abstraction(param, body.substitute(varSubst, subst))
+    override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
+        if (varSubst in body.variables && subst.variables.find { it.alias == param.alias } != null) {
+            return null
+        }
+        val bodySubst = body.substitute(varSubst, subst) ?: return null
+        return Abstraction(param, bodySubst)
+    }
 
     override fun reduce(): Lambda? {
         val reduced = body.reduce() ?: return null
         return Abstraction(param, reduced)
     }
 
-    override fun countVariables(variables: MutableSet<Variable>,
-                                excludes: MutableSet<Variable>) {
-        excludes.add(param)
-        body.countVariables(variables, excludes)
+    override val variables = hashSetOf<Variable>().apply {
+        addAll(body.variables)
+        remove(param)
     }
 
     override fun equals(other: Lambda,
@@ -52,8 +55,11 @@ class Application(
                 else -> arg.toBoundedString()
             }
 
-    override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
-            Application(func.substitute(varSubst, subst), arg.substitute(varSubst, subst))
+    override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
+        val funcSubst = func.substitute(varSubst, subst) ?: return null
+        val argSubst = arg.substitute(varSubst, subst) ?: return null
+        return funcSubst on argSubst
+    }
 
     override fun reduce(): Lambda? =
             if (func is Abstraction)
@@ -67,10 +73,9 @@ class Application(
                     Application(funcReduced, arg)
             }
 
-    override fun countVariables(variables: MutableSet<Variable>,
-                                excludes: MutableSet<Variable>) {
-        func.countVariables(variables, excludes)
-        arg.countVariables(variables, excludes)
+    override val variables = hashSetOf<Variable>().apply {
+        addAll(func.variables)
+        addAll(arg.variables)
     }
 
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
@@ -91,7 +96,7 @@ class VariableReference(
 
     override fun toString(): String = variable.alias
 
-    override fun substitute(varSubst: Variable, subst: Lambda): Lambda =
+    override fun substitute(varSubst: Variable, subst: Lambda) =
             if (varSubst == variable) subst else this
 
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
@@ -110,11 +115,7 @@ class VariableReference(
         return variable === other.variable
     }
 
-    override fun countVariables(variables: MutableSet<Variable>, excludes: MutableSet<Variable>) {
-        if (variable !in excludes) {
-            variables.add(variable)
-        }
-    }
+    override val variables = setOf(variable)
 
     override fun hashCode(variableStack: VariableStack?): Int {
         var variableStackPosition = 0
@@ -133,13 +134,18 @@ class VariableReference(
 class Let(
         val variable: Variable,
         val definition: Lambda,
-        val expr : Lambda
+        val expr: Lambda
 ) : Lambda() {
+    override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
+        if (varSubst in expr.variables && subst.variables.find { variable.alias == it.alias } != null) {
+            return null
+        }
+        val definitionSubst = definition.substitute(varSubst, subst) ?: return null
+        val exprSubst = expr.substitute(varSubst, subst) ?: return null
+        return variable.letIn(definitionSubst, exprSubst)
+    }
 
-    override fun substitute(varSubst: Variable, subst: Lambda) =
-            Let(variable, definition.substitute(varSubst, subst), expr.substitute(varSubst, subst))
-
-    override fun reduce() : Lambda? {
+    override fun reduce(): Lambda? {
         val defReduced = definition.reduce() ?: return expr.substitute(variable, definition)
 
         return Let(variable, defReduced, expr)
@@ -157,26 +163,19 @@ class Let(
                 VariableStack(other.variable, theirVariableStack))
     }
 
-    override fun countVariables(variables: MutableSet<Variable>, excludes: MutableSet<Variable>) {
-        excludes.add(variable)
-        definition.countVariables(variables, excludes)
-        expr.countVariables(variables, excludes)
+    override val variables = hashSetOf<Variable>().apply {
+        addAll(definition.variables)
+        addAll(expr.variables)
+        remove(variable)
     }
 
     override fun hashCode(variableStack: VariableStack?) =
-        31 * definition.hashCode(variableStack) + expr.hashCode(VariableStack(variable, variableStack))
+            31 * definition.hashCode(variableStack) + expr.hashCode(VariableStack(variable, variableStack))
 }
 
 fun Lambda.toBoundedString(): String = "(${toString()})"
 
-val Lambda.variables : Set<Variable>
-    get() {
-        val vars = HashSet<Variable>()
-        countVariables(vars)
-        return vars
-    }
-
-fun Lambda.reduceFully() : Lambda {
+fun Lambda.reduceFully(): Lambda {
     var lambda = this
     var reduced = lambda.reduce()
     while (reduced != null) {

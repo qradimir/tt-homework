@@ -12,6 +12,9 @@
     <option name="PASS_PARENT_ENVS" value="true" />
     <module name="tt-homework" />
     <envs />
-    <method />
+    <method>
+      <option name="Maven.BeforeRunTask" enabled="true" file="$PROJECT_DIR$/pom.xml" goal="antlr4:antlr4" />
+      <option name="Make" enabled="true" />
+    </method>
   </configuration>
 </component>

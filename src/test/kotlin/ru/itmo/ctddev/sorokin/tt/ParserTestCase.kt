@@ -17,7 +17,7 @@ class ParserTestCase : LambdaTestCase() {
     fun doParseTest(lambdaAsString: String, expectedLambda: Lambda?) {
         val actualLambda: Lambda
         try {
-            actualLambda = valueOf(lambdaAsString).resolve(getGlobalScope())
+            actualLambda = lambdaAsString.toLambdaStructure().resolve(getGlobalScope())
         } catch (e: Exception) {
             fail("Got exception '${e.message}' on parsing '$expectedLambda'")
         }

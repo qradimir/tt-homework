@@ -45,7 +45,7 @@ fun let(alias: String, def: LambdaStructure, expr: LambdaStructure) =
             }
         }
 
-fun valueOf(str: String): LambdaStructure {
-    val lexer = LambdaLexer(ANTLRInputStream(str))
+fun String.toLambdaStructure(): LambdaStructure {
+    val lexer = LambdaLexer(ANTLRInputStream(this))
     return LambdaParser(CommonTokenStream(lexer)).let_expression().ret
 }

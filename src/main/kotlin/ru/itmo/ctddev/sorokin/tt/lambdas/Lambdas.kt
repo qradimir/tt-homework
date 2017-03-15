@@ -2,6 +2,35 @@ package ru.itmo.ctddev.sorokin.tt.lambdas
 
 import ru.itmo.ctddev.sorokin.tt.common.Variable
 
+sealed class Lambda {
+    open fun substitute(varSubst: Variable, subst: Lambda): Lambda? = this
+    open fun reduce(): Lambda? = null
+
+    open val variables = emptySet<Variable>()
+
+    abstract fun equals(other: Lambda,
+                        yourVariableStack: VariableStack?,
+                        theirVariableStack: VariableStack?
+    ): Boolean
+
+    abstract fun hashCode(variableStack: VariableStack?): Int
+
+    /**
+     * Works like alpha-equivalence from lambda calculus
+     */
+    override fun equals(other: Any?): Boolean {
+        val otherLambda = other as Lambda? ?: return false
+        return equals(otherLambda, null, null)
+    }
+
+    override fun hashCode(): Int {
+        return hashCode(null)
+    }
+}
+
+data class VariableStack(val variable: Variable,
+                         val prev: VariableStack? = null)
+
 class Abstraction(
         val param: Variable,
         val body: Lambda
@@ -48,11 +77,11 @@ class Application(
 
     override fun toString(): String =
             when (func) {
-                is Abstraction -> func.toBoundedString()
-                else -> func.toString()
+                is Abstraction -> "($func)"
+                else -> "$func"
             } + ' ' + when (arg) {
-                is VariableReference -> arg.toString()
-                else -> arg.toBoundedString()
+                is VariableReference -> "$arg"
+                else -> "($arg)"
             }
 
     override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
@@ -173,8 +202,6 @@ class Let(
             31 * definition.hashCode(variableStack) + expr.hashCode(VariableStack(variable, variableStack))
 }
 
-fun Lambda.toBoundedString(): String = "(${toString()})"
-
 fun Lambda.reduceFully(): Lambda {
     var lambda = this
     var reduced = lambda.reduce()
@@ -188,7 +215,11 @@ fun Lambda.reduceFully(): Lambda {
 // util factories
 
 fun Variable.mkRef() = VariableReference(this)
+
 infix fun Lambda.on(arg: Lambda) = Application(this, arg)
+
 infix fun Variable.dot(body: Lambda) = Abstraction(this, body)
+
 fun Variable.identity() = this dot this.mkRef()
+
 fun Variable.letIn(def: Lambda, expr: Lambda) = Let(this, def, expr)

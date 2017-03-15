@@ -2,6 +2,22 @@ package ru.itmo.ctddev.sorokin.tt.constraints
 
 import ru.itmo.ctddev.sorokin.tt.common.Variable
 import ru.itmo.ctddev.sorokin.tt.lambdas.*
+import ru.itmo.ctddev.sorokin.tt.types.Type
+import ru.itmo.ctddev.sorokin.tt.types.TypeManager
+
+sealed class Constraint {
+
+    fun apply(tm: ConstraintContext) = true
+}
+
+class ConstraintContext(val tm: TypeManager) {
+
+    private val types = HashMap<Variable, Type>()
+
+    fun getType(typeVariable: Variable) : Type {
+        return types.getOrPut(typeVariable) { tm.createType() }
+    }
+}
 
 class InferenceConstraint(val left: TypeInstance, val right: TypeInstance) : Constraint() {
 
@@ -40,7 +56,7 @@ internal class ConstraintByLambdaBuilder(val nameGenerator: Iterator<String>) {
 
     internal fun build(lambda: Lambda) = buildImpl(lambda, newTypeVariable())
 
-    private fun newTypeVariable() = TypeInstance.Reference(Variable(nameGenerator.next()))
+    private fun newTypeVariable() = Reference(Variable(nameGenerator.next()))
 
     private fun buildImpl(lambda: Lambda, thisType: TypeInstance): Constraint {
         when (lambda) {
@@ -50,7 +66,7 @@ internal class ConstraintByLambdaBuilder(val nameGenerator: Iterator<String>) {
             is Application -> {
                 val argType = newTypeVariable()
                 val argConstraint = buildImpl(lambda.arg, argType)
-                val funcType = TypeInstance.Application(argType, thisType)
+                val funcType = Function(argType,  thisType)
                 val resConstraint = buildImpl(lambda.func, funcType)
                 return ExistConstraint(argType.ref, argConstraint * resConstraint)
             }
@@ -58,7 +74,7 @@ internal class ConstraintByLambdaBuilder(val nameGenerator: Iterator<String>) {
                 val paramType = newTypeVariable()
                 val bodyType = newTypeVariable()
                 val bodyConstraint = buildImpl(lambda.body, bodyType)
-                val funcInferenceConstraint = InferenceConstraint(thisType, TypeInstance.Application(paramType, bodyType))
+                val funcInferenceConstraint = InferenceConstraint(thisType, Function(paramType, bodyType))
                 val paramDefConstraint = DefinitionConstraint(lambda.param, TypeScheme.mono(paramType), bodyConstraint * funcInferenceConstraint)
                 return ExistConstraint(paramType.ref, ExistConstraint(bodyType.ref, paramDefConstraint))
             }
@@ -73,7 +89,6 @@ internal class ConstraintByLambdaBuilder(val nameGenerator: Iterator<String>) {
                 val resultConstraint = ExistConstraint(defTypeSchemeInstance.ref, exprConstraint * substituteConstraint)
                 return DefinitionConstraint(lambda.variable, defTypeScheme, resultConstraint)
             }
-            else -> throw RuntimeException("unexpected unknown lambda")
         }
     }
 }

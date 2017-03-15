@@ -1,6 +1,7 @@
 package ru.itmo.ctddev.sorokin.tt.constraints
 
 import ru.itmo.ctddev.sorokin.tt.common.*
+import ru.itmo.ctddev.sorokin.tt.lambdas.*
 
 typealias CS = Structure<Constraint>
 typealias TS = Structure<TypeInstance>
@@ -34,11 +35,11 @@ fun defining(varName: String, tss: TSS, cs: CS) = object : CS {
 }
 
 fun typeSimple(typeName: String) = object : TS {
-    override fun resolve(scope: Scope) = TypeInstance.Reference(scope.findVariable(typeName))
+    override fun resolve(scope: Scope) = Reference(scope.findVariable(typeName))
 }
 
 fun typeApplication(lts: TS, rts: TS) = object : TS {
-    override fun resolve(scope: Scope) = TypeInstance.Application(lts.resolve(scope), rts.resolve(scope))
+    override fun resolve(scope: Scope) = Function(lts.resolve(scope), rts.resolve(scope))
 }
 
 fun typeSchemeMono(ts: TS) = object : TSS {

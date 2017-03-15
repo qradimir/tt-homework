@@ -2,21 +2,20 @@ package ru.itmo.ctddev.sorokin.tt.constraints
 
 import ru.itmo.ctddev.sorokin.tt.common.Variable
 
-sealed class TypeInstance {
+sealed class TypeInstance
 
-    class Reference(val ref: Variable) : TypeInstance() {
-        override fun toString() = "$ref"
-    }
-
-    class Application(val arg: TypeInstance, val res: TypeInstance) : TypeInstance() {
-
-        override fun toString() = "${arg.toStringInLeftChild()} ->  $res"
-    }
+class Reference(val ref: Variable) : TypeInstance() {
+    override fun toString() = "$ref"
 }
 
-fun TypeInstance.toStringInLeftChild() = when (this) {
-    is TypeInstance.Application -> "($this)"
-    is TypeInstance.Reference -> "$this"
+class Function(val arg: TypeInstance, val res: TypeInstance) : TypeInstance() {
+
+    override fun toString() = "${arg.toStringInLeftChild()} ->  $res"
+}
+
+internal fun TypeInstance.toStringInLeftChild() = when (this) {
+    is Function -> "($this)"
+    is Reference -> "$this"
 }
 
 

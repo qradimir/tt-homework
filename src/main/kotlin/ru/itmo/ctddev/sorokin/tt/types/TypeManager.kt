@@ -27,7 +27,7 @@ class TypeManager {
         get() = descriptors
 
     fun createTypeApplication(argType : Type, resType: Type)
-            = createType(TypeDescriptor.TApplication(argType, resType))
+            = createType(TApplication(argType, resType))
 
     fun equalize(fst: Type, snd: Type, unify : Boolean = false) : Boolean {
         if (fst.backingType === snd.backingType)
@@ -98,14 +98,13 @@ class TypeManager {
                 varTypes[lambda.variable] = PolyType(defType, polymorphicTypes.toSet())
                 return resolve(lambda.expr)
             }
-            else -> throw RuntimeException("unexpected unknown lambda")
         }
     }
 
     internal fun concrete(type : Type) {
         val desc = descriptors[type.backingType]
         if (desc === null) {
-            descriptors[type.backingType] = TypeDescriptor.Constant(nameGenerator.next())
+            descriptors[type.backingType] = Constant(nameGenerator.next())
         } else {
             desc.params.forEach { concrete(it) }
         }

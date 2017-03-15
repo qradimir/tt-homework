@@ -3,7 +3,7 @@ package ru.itmo.ctddev.sorokin.tt
 import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
 import ru.itmo.ctddev.sorokin.tt.constraints.buildConstraint
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
-import ru.itmo.ctddev.sorokin.tt.lambdas.valueOf
+import ru.itmo.ctddev.sorokin.tt.lambdas.toLambdaStructure
 
 const val jarFileName = "tt-1.0"
 const val usage = """
@@ -29,7 +29,7 @@ inline fun validateInput(inputValidation: () -> Boolean) : Boolean {
 }
 
 fun main(args: Array<String>) {
-    if (validateInput { args.size >= 1 }) {
+    if (validateInput { args.isNotEmpty() }) {
         Session.startNewSession()
         when(args[0]) {
             "interactive" -> {
@@ -69,7 +69,7 @@ fun main(args: Array<String>) {
 
 fun runReduce(str : String) {
     try {
-        val lambda = valueOf(str).resolve(getGlobalScope())
+        val lambda = str.toLambdaStructure().resolve(getGlobalScope())
         println(lambda.reduceFully())
     } catch (e : Exception) {
         println("Error occurred on 'reduce' instruction executing:")
@@ -79,7 +79,7 @@ fun runReduce(str : String) {
 
 fun runTypeDeduction(str : String) {
     try {
-        val lambda = valueOf(str).resolve(getGlobalScope())
+        val lambda = str.toLambdaStructure().resolve(getGlobalScope())
         val type = getTypeManager().resolve(lambda)
         if (type != null) {
             println("Type: ${type.concrete()}")
@@ -102,7 +102,7 @@ val typeNameGenerator = NameGenerator("'t")
 
 fun runConstraintBuilding(str : String) {
     try {
-        val lambda = valueOf(str).resolve(getGlobalScope())
+        val lambda = str.toLambdaStructure().resolve(getGlobalScope())
         val constraint = lambda.buildConstraint(typeNameGenerator)
         println(constraint)
     } catch (e: Exception) {

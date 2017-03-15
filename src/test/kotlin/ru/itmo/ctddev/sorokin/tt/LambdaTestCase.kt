@@ -2,7 +2,8 @@ package ru.itmo.ctddev.sorokin.tt
 
 import org.junit.jupiter.api.BeforeEach
 import ru.itmo.ctddev.sorokin.tt.common.Variable
-import ru.itmo.ctddev.sorokin.tt.lambdas.*
+import ru.itmo.ctddev.sorokin.tt.lambdas.VariableReference
+import ru.itmo.ctddev.sorokin.tt.lambdas.mkRef
 
 abstract class LambdaTestCase {
 

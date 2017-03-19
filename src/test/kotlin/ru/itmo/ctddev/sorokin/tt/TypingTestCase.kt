@@ -2,6 +2,7 @@ package ru.itmo.ctddev.sorokin.tt
 
 import ru.itmo.ctddev.sorokin.tt.types.Type
 import ru.itmo.ctddev.sorokin.tt.types.TypeManager
+import ru.itmo.ctddev.sorokin.tt.types.createTypeApplication
 
 abstract class TypingTestCase : LambdaTestCase() {
 

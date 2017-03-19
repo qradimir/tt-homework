@@ -6,6 +6,9 @@ import ru.itmo.ctddev.sorokin.tt.common.Variable
 import ru.itmo.ctddev.sorokin.tt.common.mkVar
 import ru.itmo.ctddev.sorokin.tt.lambdas.*
 import ru.itmo.ctddev.sorokin.tt.types.Type
+import ru.itmo.ctddev.sorokin.tt.types.concrete
+import ru.itmo.ctddev.sorokin.tt.types.inferenceType
+import ru.itmo.ctddev.sorokin.tt.types.unifyWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -14,7 +17,7 @@ import kotlin.test.assertTrue
 class DeduceTestCase : TypingTestCase() {
 
     fun doTestDeduce(lambda: Lambda, expectedType: Type?, expectedContext: Map<Variable, Type>) {
-        val type = tm.resolve(lambda)
+        val type = lambda.inferenceType(tm)
 
         if (expectedType == null) {
             assertNull(type, "Type of '$lambda' should not be resolved")
@@ -24,8 +27,7 @@ class DeduceTestCase : TypingTestCase() {
             assertTrue(expectedType unifyWith typeNN, "Deduced type of '$lambda' mismatched")
 
             for ((variable, expected) in expectedContext) {
-                val actual = assertNotNull(tm.typeFor(variable),
-                        "Type of variable ($variable should be resolved")
+                val actual = tm.typeOf(variable).mono()
                 expected.concrete()
                 assertTrue(expected.unifyWith(actual), "Deduced variable ($variable) type mismatched")
             }

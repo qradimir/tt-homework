@@ -1,5 +1,7 @@
 package ru.itmo.ctddev.sorokin.tt.types
 
+import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
+import ru.itmo.ctddev.sorokin.tt.getTypeNameGenerator
 import java.util.*
 
 class Type internal constructor(val tm : TypeManager) {
@@ -14,29 +16,39 @@ class Type internal constructor(val tm : TypeManager) {
         }
 
     val descriptor : TypeDescriptor?
-        get() = tm.descriptorMap[backingType]
-
-    infix fun equals(other : Type)
-            = if (tm == other.tm) tm.equalize(this, other) else false
-
-    infix fun unifyWith(other: Type)
-            = if (tm == other.tm) tm.unify(this, other) else false
-
-    fun concrete() : Type {
-        tm.concrete(this)
-        return this
-    }
+        get() = tm.td(this)
 
     override fun toString()
             = descriptor?.toString() ?: super.toString()
 }
 
+infix fun Type.equals(other : Type)
+        = if (tm == other.tm) tm.equalize(this, other) else false
+
+infix fun Type.unifyWith(other: Type)
+        = if (tm == other.tm) tm.unify(this, other) else false
+
+fun Type.concrete(typeNameGenerator: NameGenerator) {
+    val desc = descriptor
+    if (desc === null) {
+        tm.substitute(this, TConstant(getTypeNameGenerator().next()))
+    } else {
+        desc.params.forEach{
+            it.concrete(typeNameGenerator)
+        }
+    }
+}
+
 operator fun Type.contains(other : Type) : Boolean {
     if (this equals other)
         return true
-    val childTypes = descriptor?.params ?: return false
-    for (child in childTypes) {
-        if (other in child)
+    val desc = descriptor ?: return false
+    return other in desc
+}
+
+operator fun TypeDescriptor.contains(otherType: Type) : Boolean {
+    for (param in params) {
+        if (otherType in param)
             return true
     }
     return false

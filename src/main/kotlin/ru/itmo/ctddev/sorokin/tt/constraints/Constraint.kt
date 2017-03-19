@@ -4,44 +4,72 @@ import ru.itmo.ctddev.sorokin.tt.common.Variable
 import ru.itmo.ctddev.sorokin.tt.lambdas.*
 import ru.itmo.ctddev.sorokin.tt.types.Type
 import ru.itmo.ctddev.sorokin.tt.types.TypeManager
+import ru.itmo.ctddev.sorokin.tt.types.createTypeApplication
+import ru.itmo.ctddev.sorokin.tt.types.unify
 
 sealed class Constraint {
 
-    fun apply(tm: ConstraintContext) = true
+    open fun apply(context: ConstraintContext) = true
 }
 
 class ConstraintContext(val tm: TypeManager) {
 
-    private val types = HashMap<Variable, Type>()
+    val types = HashMap<TypeInstance, Type>()
+    val typeVariables = HashMap<Variable, Type>()
 
-    fun getType(typeVariable: Variable) : Type {
-        return types.getOrPut(typeVariable) { tm.createType() }
+    fun runtimeTypeOf(variable: Variable) = typeVariables.getOrPut(variable) { tm.createType() }
+
+    fun runtimeTypeOf(typeInstance: TypeInstance): Type {
+        return types.getOrPut(typeInstance) {
+            when (typeInstance) {
+                is Function -> tm.createTypeApplication(runtimeTypeOf(typeInstance.arg), runtimeTypeOf(typeInstance.res))
+                is Reference -> runtimeTypeOf(typeInstance.ref)
+            }
+        }
     }
 }
 
 class InferenceConstraint(val left: TypeInstance, val right: TypeInstance) : Constraint() {
 
     override fun toString() = "$left = $right"
+
+    override fun apply(context: ConstraintContext) = with(context) {
+        tm.unify(runtimeTypeOf(left), runtimeTypeOf(right))
+    }
 }
 
 class ConstraintConjunction(val left: Constraint, val right: Constraint) : Constraint() {
 
     override fun toString() = "($left ^ $right)"
+
+    override fun apply(context: ConstraintContext) = left.apply(context) && right.apply(context)
 }
 
 class ExistConstraint(val type: Variable, val constraint: Constraint) : Constraint() {
 
     override fun toString() = "(?$type.$constraint)"
+
+    override fun apply(context: ConstraintContext) = constraint.apply(context)
 }
 
 class SubstituteConstraint(val variable: Variable, val typeInstance: TypeInstance) : Constraint() {
 
     override fun toString() = "$variable < $typeInstance"
+
+    override fun apply(context: ConstraintContext) = with(context) {
+        tm.unify(tm.typeOf(variable).mono(), runtimeTypeOf(typeInstance))
+    }
 }
 
-class DefinitionConstraint(var variable: Variable, val typeScheme: TypeScheme, val constraint: Constraint) : Constraint() {
+class DefinitionConstraint(val variable: Variable, val typeScheme: TypeScheme, val constraint: Constraint) : Constraint() {
 
     override fun toString() = "(def $variable : $typeScheme in $constraint)"
+
+    override fun apply(context: ConstraintContext): Boolean {
+        val varType = typeScheme.apply(context) ?: return false
+        context.tm.assignType(variable, varType)
+        return constraint.apply(context)
+    }
 }
 
 object NoConstraint : Constraint() {
@@ -94,4 +122,3 @@ internal class ConstraintByLambdaBuilder(val nameGenerator: Iterator<String>) {
 }
 
 fun Lambda.buildConstraint(nameGenerator: Iterator<String>) = ConstraintByLambdaBuilder(nameGenerator).build(this)
-

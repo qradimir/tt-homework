@@ -1,7 +1,10 @@
 package ru.itmo.ctddev.sorokin.tt.constraints
 
+import org.antlr.v4.runtime.ANTLRInputStream
+import org.antlr.v4.runtime.CommonTokenStream
 import ru.itmo.ctddev.sorokin.tt.common.*
-import ru.itmo.ctddev.sorokin.tt.lambdas.*
+import ru.itmo.ctddev.sorokin.tt.parser.ConstraintLexer
+import ru.itmo.ctddev.sorokin.tt.parser.ConstraintParser
 
 typealias CS = Structure<Constraint>
 typealias TS = Structure<TypeInstance>
@@ -52,4 +55,9 @@ fun typeScheme(typeNames: List<String>, cs: CS, ts: TS) = object : TSS {
         val targetScope = MultipleAbstractionScope(types, scope)
         return TypeScheme(types.toTypedArray(), cs.resolve(targetScope), ts.resolve(targetScope))
     }
+}
+
+fun String.toConstraintStructure(): CS {
+    val lexer = ConstraintLexer(ANTLRInputStream(this))
+    return ConstraintParser(CommonTokenStream(lexer)).constraint().ret
 }

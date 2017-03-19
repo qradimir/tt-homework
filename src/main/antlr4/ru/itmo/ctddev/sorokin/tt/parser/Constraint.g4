@@ -24,6 +24,8 @@ constraint returns[Structure<Constraint> ret]
 type returns[Structure<TypeInstance> ret]
     : l=atom_type TO r=type
         { $ret = ConstraintStructureKt.typeApplication($l.ret, $r.ret); }
+    | atom_type
+        { $ret = $atom_type.ret; }
     ;
 
 atom_type returns[Structure<TypeInstance> ret]
@@ -46,7 +48,7 @@ OBR   : '(';
 CBR   : ')';
 OSBR  : '[';
 CSBR  : ']';
-AND   : '&';
+AND   : '^';
 DEF   : 'def';
 IN    : 'in';
 TO    : '->';

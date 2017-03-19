@@ -1,9 +1,9 @@
 package ru.itmo.ctddev.sorokin.tt
 
 import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
+import ru.itmo.ctddev.sorokin.tt.constraints.ConstraintContext
 import ru.itmo.ctddev.sorokin.tt.constraints.buildConstraint
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
-import ru.itmo.ctddev.sorokin.tt.lambdas.toLambdaStructure
 
 const val jarFileName = "tt-1.0"
 const val usage = """
@@ -12,6 +12,8 @@ usage: java -jar $jarFileName.jar <instruction>
 instructions:
     reduce <lambda expression>
     type <lambda expression>
+    constraint <lambda expression>
+    type-constraint <constraint expression>
     interactive
     usage
 
@@ -38,6 +40,7 @@ fun main(args: Array<String>) {
                         val input = readLine() ?: return
                         when {
                             input.startsWith("reduce") -> runReduce(input.substring(6))
+                            input.startsWith("type-constraint") -> runConstraintTyping(input.substring(15))
                             input.startsWith("type") -> runTypeDeduction(input.substring(4))
                             input.startsWith("constraint") -> runConstraintBuilding(input.substring(10))
                             input.startsWith("exit") -> return
@@ -59,6 +62,10 @@ fun main(args: Array<String>) {
                 if (validateInput { args.size == 2 })
                     runConstraintBuilding(args[1])
             }
+            "type-constraint" -> {
+                if (validateInput { args.size == 2 })
+                    runConstraintTyping(args[1])
+            }
             "usage" -> {
                 println(usage)
             }
@@ -69,8 +76,7 @@ fun main(args: Array<String>) {
 
 fun runReduce(str : String) {
     try {
-        val lambda = str.toLambdaStructure().resolve(getGlobalScope())
-        println(lambda.reduceFully())
+        println(str.asLambda.reduceFully())
     } catch (e : Exception) {
         println("Error occurred on 'reduce' instruction executing:")
         e.printStackTrace()
@@ -79,15 +85,15 @@ fun runReduce(str : String) {
 
 fun runTypeDeduction(str : String) {
     try {
-        val lambda = str.toLambdaStructure().resolve(getGlobalScope())
-        val type = getTypeManager().resolve(lambda)
+        val lambda = str.asLambda
+        val type = lambda.type
         if (type != null) {
             println("Type: ${type.concrete()}")
             val variables = lambda.variables
             val empty = variables.isEmpty()
             println("Context: " + if (empty) "empty" else "")
             for (variable in variables) {
-                println("    $variable : ${getTypeManager().typeFor(variable).concrete()}")
+                println("    $variable : ${variable.type.concrete()}")
             }
         } else {
             println("No type deduced")
@@ -98,15 +104,29 @@ fun runTypeDeduction(str : String) {
     }
 }
 
-val typeNameGenerator = NameGenerator("'t")
+val ctNameGenerator = NameGenerator("'t")
 
 fun runConstraintBuilding(str : String) {
     try {
-        val lambda = str.toLambdaStructure().resolve(getGlobalScope())
-        val constraint = lambda.buildConstraint(typeNameGenerator)
+        val lambda = str.asLambda
+        val constraint = lambda.buildConstraint(ctNameGenerator)
         println(constraint)
     } catch (e: Exception) {
         println("Error occurred on 'constraint' instruction executing")
+        e.printStackTrace()
+    }
+}
+
+fun runConstraintTyping(str: String) {
+    try {
+        val constraint = str.asConstraint
+        val context = ConstraintContext(getTypeManager())
+        constraint.apply(context)
+        for ((variable, type) in context.typeVariables) {
+            println("$variable : ${type.concrete()}")
+        }
+    } catch (e: Exception) {
+        println("Error occurred on 'type-constraint' instruction executing")
         e.printStackTrace()
     }
 }

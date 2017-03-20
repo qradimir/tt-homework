@@ -57,7 +57,7 @@ operator fun TypeDescriptor.contains(otherType: Type) : Boolean {
 fun Type.countVariables(variables : MutableSet<Type>) {
     val desc = descriptor
     if (desc == null) {
-        variables.add(this)
+        variables.add(this.backingType)
     } else {
         desc.params.forEach { it.countVariables(variables) }
     }

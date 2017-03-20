@@ -1,5 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt.types
 
+import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
 import java.util.*
 
 data class PolyType(internal val type : Type,
@@ -13,6 +14,25 @@ data class PolyType(internal val type : Type,
         val createdVariables = HashMap<Type, Type>()
         return type.recreateLiterals(variables, createdVariables)
     }
+
+    override fun toString() : String {
+        if (polymorphicTypes.isEmpty()) {
+            return type.toString()
+        }
+        var res = "@"
+        for (param in polymorphicTypes) {
+            res += " $param"
+        }
+        res += ". $type"
+        return res
+    }
+}
+
+fun PolyType.concrete(typeNameGenerator: NameGenerator) {
+    for (param in polymorphicTypes) {
+        param.concrete(typeNameGenerator)
+    }
+    type.concrete(typeNameGenerator)
 }
 
 

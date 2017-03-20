@@ -3,6 +3,7 @@ package ru.itmo.ctddev.sorokin.tt
 import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
 import ru.itmo.ctddev.sorokin.tt.constraints.ConstraintContext
 import ru.itmo.ctddev.sorokin.tt.constraints.buildConstraint
+import ru.itmo.ctddev.sorokin.tt.constraints.variables
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
 
 const val jarFileName = "tt-1.0"
@@ -122,8 +123,13 @@ fun runConstraintTyping(str: String) {
         val constraint = str.asConstraint
         val context = ConstraintContext(getTypeManager())
         constraint.apply(context)
+        println("variables:")
+        for (variable in constraint.variables) {
+            println("    $variable : ${context.tm.typeOf(variable).concrete()}")
+        }
+        println("type variables:")
         for ((variable, type) in context.typeVariables) {
-            println("$variable : ${type.concrete()}")
+            println("    $variable : ${type.concrete()}")
         }
     } catch (e: Exception) {
         println("Error occurred on 'type-constraint' instruction executing")

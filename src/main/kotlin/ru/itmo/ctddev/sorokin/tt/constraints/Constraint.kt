@@ -122,3 +122,28 @@ internal class ConstraintByLambdaBuilder(val nameGenerator: Iterator<String>) {
 }
 
 fun Lambda.buildConstraint(nameGenerator: Iterator<String>) = ConstraintByLambdaBuilder(nameGenerator).build(this)
+
+val Constraint.variables : Set<Variable>
+    get() {
+        val vars = HashSet<Variable>()
+        countVariables(vars)
+        return vars
+    }
+
+internal fun Constraint.countVariables(vars: MutableSet<Variable>) {
+    when (this) {
+        is ConstraintConjunction -> {
+            left.countVariables(vars)
+            right.countVariables(vars)
+        }
+        is DefinitionConstraint -> {
+            typeScheme.constraint.countVariables(vars)
+            constraint.countVariables(vars)
+            vars.remove(variable)
+        }
+        is ExistConstraint -> {
+            constraint.countVariables(vars)
+        }
+        is SubstituteConstraint -> vars.add(variable)
+    }
+}

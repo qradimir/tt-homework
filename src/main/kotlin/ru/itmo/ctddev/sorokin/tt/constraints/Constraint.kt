@@ -40,7 +40,7 @@ class InferenceConstraint(val left: TypeInstance, val right: TypeInstance) : Con
 
 class ConstraintConjunction(val left: Constraint, val right: Constraint) : Constraint() {
 
-    override fun toString() = "($left ^ $right)"
+    override fun toString() = "($left & $right)"
 
     override fun apply(context: ConstraintContext) = left.apply(context) && right.apply(context)
 }

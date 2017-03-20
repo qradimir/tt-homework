@@ -17,7 +17,7 @@ constraint returns[Structure<Constraint> ret]
         { $ret = ConstraintStructureKt.substitution($VAR.text, $type.ret); }
     | /*inference*/ lt=type EQ rt=type
         { $ret = ConstraintStructureKt.inference($lt.ret, $rt.ret); }
-    | /*defining*/ OBR DEF VAR COLON ts=type_scheme IN c=constraint
+    | /*defining*/ OBR DEF VAR COLON ts=type_scheme IN c=constraint CBR
         { $ret = ConstraintStructureKt.defining($VAR.text, $ts.ret, $c.ret); }
     ;
 
@@ -48,7 +48,7 @@ OBR   : '(';
 CBR   : ')';
 OSBR  : '[';
 CSBR  : ']';
-AND   : '^';
+AND   : '&';
 DEF   : 'def';
 IN    : 'in';
 TO    : '->';

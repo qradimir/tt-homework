@@ -35,8 +35,9 @@ class TypeScheme(val params: Array<Variable>, val constraint: Constraint, val ou
     override fun toString(): String {
         var res = ""
         if (!params.isEmpty()) {
+            res += "@"
             for (param in params) {
-                res += "$param "
+                res += " $param"
             }
             res += "[$constraint]."
         }

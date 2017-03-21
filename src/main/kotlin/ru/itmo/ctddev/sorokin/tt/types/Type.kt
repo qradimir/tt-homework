@@ -19,7 +19,7 @@ class Type internal constructor(val tm : TypeManager) {
         get() = tm.td(this)
 
     override fun toString()
-            = descriptor?.toString() ?: super.toString()
+            = descriptor?.toString() ?: "type[${Integer.toHexString(backingType.hashCode())}]"
 }
 
 infix fun Type.equals(other : Type)

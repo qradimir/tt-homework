@@ -1,7 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt.types
 
 import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
-import java.util.*
 
 data class PolyType(internal val type : Type,
                     internal val polymorphicTypes: Set<Type>) {
@@ -10,7 +9,7 @@ data class PolyType(internal val type : Type,
         if (polymorphicTypes.isEmpty()) {
             return type
         }
-        val variables = HashSet(polymorphicTypes)
+        val variables = HashSet(polymorphicTypes.map { it.backingType })
         val createdVariables = HashMap<Type, Type>()
         return type.recreateLiterals(variables, createdVariables)
     }
@@ -40,13 +39,13 @@ internal fun Type.recreateLiterals(literals : MutableSet<Type>,
                                    createdLiterals : MutableMap<Type, Type>) : Type {
     val desc = descriptor
     if (desc == null) {
-        if (this in literals) {
-            literals.remove(this)
+        if (backingType in literals) {
+            literals.remove(backingType)
             val lit = tm.createType()
-            createdLiterals[this] = lit
+            createdLiterals[backingType] = lit
             return lit
         }
-        return createdLiterals[this] ?: this
+        return createdLiterals[backingType] ?: this
     } else {
         var changed = false
         val newParams = mutableListOf<Type>()

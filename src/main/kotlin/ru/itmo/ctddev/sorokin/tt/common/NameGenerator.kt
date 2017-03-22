@@ -6,4 +6,8 @@ class NameGenerator(val prefix: String) : Iterator<String> {
     override fun hasNext() = true
 
     override fun next() = "$prefix${index++}"
+
+    fun restart() {
+        index = 0
+    }
 }

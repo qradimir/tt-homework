@@ -130,6 +130,13 @@ val Constraint.variables : Set<Variable>
         return vars
     }
 
+val Constraint.typeVariables : Set<Variable>
+    get() {
+        val vars = HashSet<Variable>()
+        countTypeVariables(vars)
+        return vars
+    }
+
 internal fun Constraint.countVariables(vars: MutableSet<Variable>) {
     when (this) {
         is ConstraintConjunction -> {
@@ -145,5 +152,38 @@ internal fun Constraint.countVariables(vars: MutableSet<Variable>) {
             constraint.countVariables(vars)
         }
         is SubstituteConstraint -> vars.add(variable)
+    }
+}
+
+internal fun Constraint.countTypeVariables(vars: MutableSet<Variable>) {
+    when (this) {
+        is ConstraintConjunction -> {
+            left.countTypeVariables(vars)
+            right.countTypeVariables(vars)
+        }
+        is DefinitionConstraint -> {
+            typeScheme.constraint.countTypeVariables(vars)
+            vars.removeAll(typeScheme.params)
+            constraint.countTypeVariables(vars)
+        }
+        is ExistConstraint -> {
+            constraint.countTypeVariables(vars)
+            vars.remove(type)
+        }
+        is InferenceConstraint -> {
+            left.countTypeVariables(vars)
+            right.countTypeVariables(vars)
+        }
+        is SubstituteConstraint -> typeInstance.countTypeVariables(vars)
+    }
+}
+
+internal fun TypeInstance.countTypeVariables(vars: MutableSet<Variable>) {
+    when (this) {
+        is Function -> {
+            res.countTypeVariables(vars)
+            arg.countTypeVariables(vars)
+        }
+        is Reference -> vars.add(ref)
     }
 }

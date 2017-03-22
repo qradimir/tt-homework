@@ -1,7 +1,6 @@
 package ru.itmo.ctddev.sorokin.tt.types
 
 import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
-import ru.itmo.ctddev.sorokin.tt.getTypeNameGenerator
 import java.util.*
 
 class Type internal constructor(val tm : TypeManager) {
@@ -31,7 +30,7 @@ infix fun Type.unifyWith(other: Type)
 fun Type.concrete(typeNameGenerator: NameGenerator) {
     val desc = descriptor
     if (desc === null) {
-        tm.substitute(this, TConstant(getTypeNameGenerator().next()))
+        tm.substitute(this, TConstant(typeNameGenerator.next()))
     } else {
         desc.params.forEach{
             it.concrete(typeNameGenerator)

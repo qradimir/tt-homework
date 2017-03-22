@@ -14,10 +14,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @DisplayName("type deduction tests")
-class DeduceTestCase : TypingTestCase() {
+open class DeduceTestCase : TypingTestCase() {
+
+    open fun deduceType(lambda: Lambda) = lambda.inferenceType(tm)
 
     fun doTestDeduce(lambda: Lambda, expectedType: Type?, expectedContext: Map<Variable, Type>) {
-        val type = lambda.inferenceType(tm)
+        val type = deduceType(lambda)
 
         if (expectedType == null) {
             assertNull(type, "Type of '$lambda' should not be resolved")

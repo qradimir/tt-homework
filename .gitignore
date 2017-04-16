@@ -1,7 +1,12 @@
-target/
-*.iml
-
+-- IDEA local project settings
 .idea/workspace.xml
 .idea/misc.xml
 .idea/uiDesigner.xml
 .idea/libraries
+*.iml
+
+-- compilation target directory
+target/
+
+-- idris generated cache
+**/*.ibc

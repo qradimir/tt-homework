@@ -53,4 +53,24 @@ class ReduceTestCase : LambdaTestCase() {
         // (\x.\y.x) y
         doExceptNoReductionTest((param1 dot (param2 dot param1.mkRef())) on vrY)
     }
+
+    @DisplayName("self-applied abstraction [ ((\\x.x x) (\\t.\\f.t f)) y]")
+    @Test
+    fun testReduce_selfAppliedAbstraction() {
+        val x = "x".mkVar()
+        val t = "t".mkVar()
+        val f = "f".mkVar()
+        val y = "y".mkVar()
+        val omega = x dot (x.mkRef() on x.mkRef())
+        val application = t dot (f dot (t.mkRef() on f.mkRef()))
+        val test = (omega on application) on y.mkRef()
+        val expect = f dot (y.mkRef() on f.mkRef())
+
+        //    ((\x.x x) (\t.\f.t f)) y
+        // -> ((\t.\f.t f) (\t.\f.t f)) y
+        // -> (\f.(\t.\f.t f) f) y
+        // -> (\t.\f.t f) y                BUT NOT (\t.\f.t y) y
+        // -> \f.y f
+        doReduceTest(test, expect)
+    }
 }

@@ -15,6 +15,8 @@ sealed class Lambda {
 
     abstract fun hashCode(variableStack: VariableStack?): Int
 
+    abstract fun recreateParameters(oldVariableStack: VariableStack? = null, newVariableStack: VariableStack? = null): Lambda
+
     /**
      * Works like alpha-equivalence from lambda calculus
      */
@@ -68,6 +70,10 @@ class Abstraction(
 
     override fun hashCode(variableStack: VariableStack?) = body.hashCode(VariableStack(param, variableStack))
 
+    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?): Lambda {
+        val newParam = Variable(param.alias)
+        return newParam dot body.recreateParameters(VariableStack(param, oldVariableStack), VariableStack(newParam, newVariableStack))
+    }
 }
 
 class Application(
@@ -117,6 +123,9 @@ class Application(
 
     override fun hashCode(variableStack: VariableStack?): Int =
             31 * func.hashCode(variableStack) + arg.hashCode(variableStack)
+
+    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?) =
+            func.recreateParameters(oldVariableStack, newVariableStack) on arg.recreateParameters(oldVariableStack, newVariableStack)
 }
 
 class VariableReference(
@@ -126,7 +135,7 @@ class VariableReference(
     override fun toString(): String = variable.alias
 
     override fun substitute(varSubst: Variable, subst: Lambda) =
-            if (varSubst == variable) subst else this
+            if (varSubst == variable) subst.recreateParameters() else this
 
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
         if (other !is VariableReference)
@@ -157,6 +166,20 @@ class VariableReference(
             variableStackPosition++
         }
         return variable.hashCode()
+    }
+
+    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?): Lambda {
+        var oldStack = oldVariableStack
+        var newStack = newVariableStack
+        while (oldStack != null) {
+            if (newStack == null)
+                throw IllegalStateException("variable stacks have different lengths")
+            if (oldStack.variable == variable)
+                return newStack.variable.mkRef()
+            oldStack = oldStack.prev
+            newStack = newStack.prev
+        }
+        return this
     }
 }
 
@@ -200,6 +223,12 @@ class Let(
 
     override fun hashCode(variableStack: VariableStack?) =
             31 * definition.hashCode(variableStack) + expr.hashCode(VariableStack(variable, variableStack))
+
+    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?): Lambda {
+        val newDefinition = definition.recreateParameters(oldVariableStack, newVariableStack)
+        val newVariable = Variable(variable.alias)
+        return newVariable.letIn(newDefinition, expr.recreateParameters(VariableStack(variable, oldVariableStack), VariableStack(newVariable, newVariableStack)))
+    }
 }
 
 fun Lambda.reduceFully(): Lambda {

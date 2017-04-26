@@ -8,5 +8,9 @@
 -- compilation target directory
 target/
 
+--test files
+**/*.in
+**/*.out
+
 -- idris generated cache
 **/*.ibc

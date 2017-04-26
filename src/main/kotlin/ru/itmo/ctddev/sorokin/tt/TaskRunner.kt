@@ -1,11 +1,12 @@
 package ru.itmo.ctddev.sorokin.tt
 
-import ru.itmo.ctddev.sorokin.tt.common.NameGenerator
 import ru.itmo.ctddev.sorokin.tt.constraints.ConstraintContext
 import ru.itmo.ctddev.sorokin.tt.constraints.buildConstraint
 import ru.itmo.ctddev.sorokin.tt.constraints.typeVariables
 import ru.itmo.ctddev.sorokin.tt.constraints.variables
 import ru.itmo.ctddev.sorokin.tt.lambdas.reduceFully
+import java.io.BufferedWriter
+import java.io.File
 
 const val jarFileName = "tt-1.0"
 const val usage = """
@@ -33,6 +34,33 @@ inline fun validateInput(inputValidation: () -> Boolean) : Boolean {
     }
 }
 
+val defaultWriter = System.out.bufferedWriter()
+
+fun fromFile(fileName: String, action: (String, BufferedWriter) -> Unit) {
+    val inFile = fileName + ".in"
+    val outFile = fileName + ".out"
+    val input = File(inFile).bufferedReader().readLine()
+    val writer = File(outFile).bufferedWriter()
+    action(input, writer)
+    writer.close()
+}
+
+fun fromConsole(input: String, action: (String, BufferedWriter) -> Unit) {
+    action(input, defaultWriter)
+}
+
+fun doAction(args: Array<String>, action: (String, BufferedWriter) -> Unit) {
+    if (validateInput { args.size > 1 }) {
+        if (args[1] == "--file") {
+            if (validateInput { args.size == 3 }) {
+                fromFile(args[2], action)
+            }
+        } else if (validateInput { args.size == 2 }) {
+            fromConsole(args[1], action)
+        }
+    }
+}
+
 fun main(args: Array<String>) {
     if (validateInput { args.isNotEmpty() }) {
         Session.startNewSession()
@@ -42,11 +70,11 @@ fun main(args: Array<String>) {
                     while (true) {
                         val input = readLine() ?: return
                         when {
-                            input.startsWith("reduce") -> runReduce(input.substring(6))
-                            input.startsWith("type-c") -> runConstraintTyping(input.substring(6))
-                            input.startsWith("type-lc") -> runTypingByConstraint(input.substring(7))
-                            input.startsWith("type") -> runTypeDeduction(input.substring(4))
-                            input.startsWith("constraint") -> runConstraintBuilding(input.substring(10))
+                            input.startsWith("reduce") -> runReduce(input.substring(6), defaultWriter)
+                            input.startsWith("type-c") -> runConstraintTyping(input.substring(6), defaultWriter)
+                            input.startsWith("type-lc") -> runTypingByConstraint(input.substring(7), defaultWriter)
+                            input.startsWith("type") -> runTypeDeduction(input.substring(4), defaultWriter)
+                            input.startsWith("constraint") -> runConstraintBuilding(input.substring(10), defaultWriter)
                             input.startsWith("exit") -> return
                             else -> println("Unknown instruction. Try again.")
                         }
@@ -54,56 +82,39 @@ fun main(args: Array<String>) {
                     }
                 }
             }
-            "reduce" -> {
-                if (validateInput { args.size == 2 })
-                    runReduce(args[1])
-            }
-            "type" -> {
-                if (validateInput { args.size == 2 })
-                    runTypeDeduction(args[1])
-            }
-            "constraint" -> {
-                if (validateInput { args.size == 2 })
-                    runConstraintBuilding(args[1])
-            }
-            "type-c" -> {
-                if (validateInput { args.size == 2 })
-                    runConstraintTyping(args[1])
-            }
-            "type-lc" -> {
-                if (validateInput { args.size ==2 })
-                    runTypingByConstraint(args[1])
-            }
-            "usage" -> {
-                println(usage)
-            }
+            "reduce" -> doAction(args, ::runReduce)
+            "type" -> doAction(args, ::runTypeDeduction)
+            "constraint" -> doAction(args, ::runConstraintBuilding)
+            "type-c" -> doAction(args, ::runConstraintTyping)
+            "type-lc" -> doAction(args, ::runTypingByConstraint)
+            "usage" -> println(usage)
             else -> println(usage)
         }
     }
 }
 
-fun runReduce(str : String) {
+fun runReduce(str: String, writer: BufferedWriter) {
     try {
-        println(str.asLambda.reduceFully())
+        writer.appendln(str.asLambda.reduceFully().toString())
     } catch (e : Exception) {
         println("Error occurred on 'reduce' instruction executing:")
         e.printStackTrace()
     }
 }
 
-fun runTypeDeduction(str : String) {
+fun runTypeDeduction(str: String, writer: BufferedWriter) {
     try {
         val lambda = str.asLambda
         val type = lambda.type
         if (type != null) {
-            println("Type: ${type.concrete()}")
+            writer.appendln("Type: ${type.concrete()}")
             val variables = lambda.variables
-            println("Context: " + if (variables.isEmpty()) "empty" else "")
+            writer.appendln("Context: " + if (variables.isEmpty()) "empty" else "")
             for (variable in variables) {
-                println("    $variable : ${variable.type.concrete()}")
+                writer.appendln("    $variable : ${variable.type.concrete()}")
             }
         } else {
-            println("No type deduced")
+            writer.appendln("No type deduced")
         }
     } catch (e : Exception) {
         println("Error occurred on 'type' instruction executing")
@@ -111,18 +122,18 @@ fun runTypeDeduction(str : String) {
     }
 }
 
-fun runConstraintBuilding(str : String) {
+fun runConstraintBuilding(str: String, writer: BufferedWriter) {
     try {
         val lambda = str.asLambda
         val constraint = lambda.buildConstraint(ctNameGenerator)
-        println(constraint)
+        writer.appendln(constraint.toString())
     } catch (e: Exception) {
         println("Error occurred on 'constraint' instruction executing")
         e.printStackTrace()
     }
 }
 
-fun runConstraintTyping(str: String) {
+fun runConstraintTyping(str: String, writer: BufferedWriter) {
     try {
         val constraint = str.asConstraint
         val context = ConstraintContext(getTypeManager())
@@ -130,15 +141,15 @@ fun runConstraintTyping(str: String) {
         if (success) {
             val typeVariables = constraint.typeVariables
             for (typeVariable in typeVariables) {
-                println(context.typeVariables[typeVariable]!!.concrete())
+                writer.appendln(context.typeVariables[typeVariable]!!.concrete().toString())
             }
             val variables = constraint.variables
-            println("Context: " + if (variables.isEmpty()) "empty" else "")
+            writer.appendln("Context: " + if (variables.isEmpty()) "empty" else "")
             for (variable in variables) {
-                println("    $variable : ${context.tm.typeOf(variable).concrete()}")
+                writer.appendln("    $variable : ${context.tm.typeOf(variable).concrete()}")
             }
         } else {
-            println("No type deduced.")
+            writer.appendln("No type deduced.")
         }
     } catch (e: Exception) {
         println("Error occurred on 'type-c' instruction executing")
@@ -146,7 +157,7 @@ fun runConstraintTyping(str: String) {
     }
 }
 
-fun runTypingByConstraint(str: String) {
+fun runTypingByConstraint(str: String, writer: BufferedWriter) {
     try {
         val lambda = str.asLambda
         val constraint = lambda.constraint
@@ -156,17 +167,18 @@ fun runTypingByConstraint(str: String) {
         if (success) {
             val typeVariables = constraint.typeVariables
             for (typeVariable in typeVariables) {
-                println("Type:       ${context.typeVariables[typeVariable]!!.concrete()}")
+                writer.appendln("Type:       ${context.typeVariables[typeVariable]!!.concrete()}")
             }
             val variables = constraint.variables
-            println("Context:    " + if (variables.isEmpty()) "empty" else "")
+            writer.appendln("Context:    " + if (variables.isEmpty()) "empty" else "")
             for (variable in variables) {
-                println("    $variable : ${context.tm.typeOf(variable).concrete()}")
+                writer.appendln("    $variable : ${context.tm.typeOf(variable).concrete()}")
             }
         } else {
-            println("No type deduced.")
+            writer.appendln("No type deduced.")
         }
     } catch (e: Exception) {
         println("Error occurred on 'type-lc' instruction executing")
+        e.printStackTrace()
     }
 }

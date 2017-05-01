@@ -39,7 +39,7 @@ val defaultWriter = System.out.bufferedWriter()
 fun fromFile(fileName: String, action: (String, BufferedWriter) -> Unit) {
     val inFile = fileName + ".in"
     val outFile = fileName + ".out"
-    val input = File(inFile).bufferedReader().readLine()
+    val input = File(inFile).readText()
     val writer = File(outFile).bufferedWriter()
     action(input, writer)
     writer.close()
@@ -47,6 +47,7 @@ fun fromFile(fileName: String, action: (String, BufferedWriter) -> Unit) {
 
 fun fromConsole(input: String, action: (String, BufferedWriter) -> Unit) {
     action(input, defaultWriter)
+    defaultWriter.flush()
 }
 
 fun doAction(args: Array<String>, action: (String, BufferedWriter) -> Unit) {
@@ -70,25 +71,25 @@ fun main(args: Array<String>) {
                     while (true) {
                         val input = readLine() ?: return
                         when {
-                            input.startsWith("reduce") -> runReduce(input.substring(6), defaultWriter)
-                            input.startsWith("type-c") -> runConstraintTyping(input.substring(6), defaultWriter)
-                            input.startsWith("type-lc") -> runTypingByConstraint(input.substring(7), defaultWriter)
-                            input.startsWith("type") -> runTypeDeduction(input.substring(4), defaultWriter)
-                            input.startsWith("constraint") -> runConstraintBuilding(input.substring(10), defaultWriter)
-                            input.startsWith("exit") -> return
-                            else -> println("Unknown instruction. Try again.")
+                            input.startsWith("reduce")     -> fromConsole(input.substring(6), ::runReduce)
+                            input.startsWith("type-c")     -> fromConsole(input.substring(6), ::runConstraintTyping)
+                            input.startsWith("type-lc")    -> fromConsole(input.substring(7), ::runTypingByConstraint)
+                            input.startsWith("type")       -> fromConsole(input.substring(4), ::runTypeDeduction)
+                            input.startsWith("constraint") -> fromConsole(input.substring(10), ::runConstraintBuilding)
+                            input.startsWith("exit")       -> return
+                            else                           -> println("Unknown instruction. Try again.")
                         }
                         Session.startNewSession()
                     }
                 }
             }
-            "reduce" -> doAction(args, ::runReduce)
-            "type" -> doAction(args, ::runTypeDeduction)
+            "reduce"     -> doAction(args, ::runReduce)
+            "type"       -> doAction(args, ::runTypeDeduction)
             "constraint" -> doAction(args, ::runConstraintBuilding)
-            "type-c" -> doAction(args, ::runConstraintTyping)
-            "type-lc" -> doAction(args, ::runTypingByConstraint)
-            "usage" -> println(usage)
-            else -> println(usage)
+            "type-c"     -> doAction(args, ::runConstraintTyping)
+            "type-lc"    -> doAction(args, ::runTypingByConstraint)
+            "usage"      -> println(usage)
+            else         -> println(usage)
         }
     }
 }

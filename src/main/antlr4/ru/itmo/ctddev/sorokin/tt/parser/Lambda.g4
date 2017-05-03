@@ -4,6 +4,7 @@ grammar Lambda;
 import ru.itmo.ctddev.sorokin.tt.common.Structure;
 import ru.itmo.ctddev.sorokin.tt.lambdas.Lambda;
 import ru.itmo.ctddev.sorokin.tt.lambdas.LambdaStructureKt;
+import java.util.Collections;
 }
 
 let_expression returns[Structure<Lambda> ret]
@@ -18,8 +19,14 @@ expression returns[Structure<Lambda> ret]
     | abstraction { $ret = $abstraction.ret; }
     ;
 
-abstraction returns[Structure<Lambda> ret]
-    : LAMBDA VAR DOT expression { $ret = LambdaStructureKt.abstraction($VAR.text, $expression.ret); }
+abstraction returns[Structure<Lambda> ret] locals [List<String> variables]
+    : LAMBDA
+        { $variables = new ArrayList<>(1); }
+    ( VAR
+        { $variables.add($VAR.text); }
+    )+
+    DOT expression
+        { $ret = $expression.ret; Collections.reverse($variables); for(String variable: $variables) { $ret = LambdaStructureKt.abstraction(variable, $ret); }}
     ;
 
 application returns[Structure<Lambda> ret]
@@ -39,5 +46,5 @@ OBR : '(';
 CBR : ')';
 LAMBDA : '\\';
 DOT : '.';
-VAR :  [a-z] [a-z0-9\']*;
-WS : (' ' | '\t')+ -> skip;
+VAR :  [a-zA-Z] [a-zA-Z0-9\']*;
+WS : (' ' | '\t' | '\n')+ -> skip;

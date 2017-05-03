@@ -2,9 +2,12 @@ package ru.itmo.ctddev.sorokin.tt.lambdas
 
 import ru.itmo.ctddev.sorokin.tt.common.Variable
 
-sealed class Lambda {
-    open fun substitute(varSubst: Variable, subst: Lambda): Lambda? = this
-    open fun reduce(): Lambda? = null
+sealed class Lambda : LambdaContainer {
+    override val lambda: Lambda
+        get() = this
+
+    override fun substitute(varSubst: Variable, subst: LambdaContainer): LambdaContainer? = this
+    override fun reduce(): Lambda? = null
 
     open val variables = emptySet<Variable>()
 
@@ -14,8 +17,6 @@ sealed class Lambda {
     ): Boolean
 
     abstract fun hashCode(variableStack: VariableStack?): Int
-
-    abstract fun recreateParameters(oldVariableStack: VariableStack? = null, newVariableStack: VariableStack? = null): Lambda
 
     /**
      * Works like alpha-equivalence from lambda calculus
@@ -35,20 +36,40 @@ data class VariableStack(val variable: Variable,
 
 class Abstraction(
         val param: Variable,
-        val body: Lambda
+        val bodyContainer: LambdaContainer
 ) : Lambda() {
+
+    val body: Lambda
+        get() = bodyContainer.lambda
+
     override fun toString(): String = '\\' + param.alias + '.' + body
 
-    override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
-        if (varSubst in body.variables && subst.variables.find { it.alias == param.alias } != null) {
+    override fun substitute(varSubst: Variable, subst: LambdaContainer): LambdaContainer? {
+        if (varSubst in body.variables && subst.lambda.variables.find { it.alias == param.alias } != null) {
             return null
         }
-        val bodySubst = body.substitute(varSubst, subst) ?: return null
+        val bodySubst = bodyContainer.substitute(varSubst, subst) ?: return null
         return Abstraction(param, bodySubst)
     }
 
+    override fun substituteShared(varSubst: Variable, subst: LambdaContainer, oldVariableStack: VariableStack?, newVariableStack: VariableStack?): LambdaContainer? {
+        if (varSubst in body.variables && subst.lambda.variables.find { it.alias == param.alias } != null) {
+            return null
+        }
+        val newParam = Variable(param.alias)
+        val bodySubst = bodyContainer.substituteShared(
+                varSubst,
+                subst,
+                VariableStack(param, oldVariableStack),
+                VariableStack(newParam, newVariableStack)
+        ) ?: return null
+        return Abstraction(newParam, bodySubst)
+    }
+
     override fun reduce(): Lambda? {
-        val reduced = body.reduce() ?: return null
+        val reduced = bodyContainer.reduce() ?: return null
+        if (reduced === bodyContainer)
+            return this
         return Abstraction(param, reduced)
     }
 
@@ -69,17 +90,18 @@ class Abstraction(
     }
 
     override fun hashCode(variableStack: VariableStack?) = body.hashCode(VariableStack(param, variableStack))
-
-    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?): Lambda {
-        val newParam = Variable(param.alias)
-        return newParam dot body.recreateParameters(VariableStack(param, oldVariableStack), VariableStack(newParam, newVariableStack))
-    }
 }
 
 class Application(
-        val func: Lambda,
-        val arg: Lambda
+        val funcContainer: LambdaContainer,
+        val argContainer: LambdaContainer
 ) : Lambda() {
+
+    val func: Lambda
+        get() = funcContainer.lambda
+
+    val arg: Lambda
+        get() = argContainer.lambda
 
     override fun toString(): String =
             when (func) {
@@ -90,23 +112,44 @@ class Application(
                 else -> "($arg)"
             }
 
-    override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
-        val funcSubst = func.substitute(varSubst, subst) ?: return null
-        val argSubst = arg.substitute(varSubst, subst) ?: return null
-        return funcSubst on argSubst
+    override fun substitute(varSubst: Variable, subst: LambdaContainer): Lambda? {
+        val funcSubst = funcContainer.substitute(varSubst, subst) ?: return null
+        val argSubst = argContainer.substitute(varSubst, subst) ?: return null
+        return Application(funcSubst, argSubst)
     }
 
-    override fun reduce(): Lambda? =
-            if (func is Abstraction)
-                func.body.substitute(func.param, arg)
-            else {
-                val funcReduced = func.reduce()
-                if (funcReduced == null) {
-                    val argReduced = arg.reduce()
-                    if (argReduced == null) null else Application(func, argReduced)
-                } else
-                    Application(funcReduced, arg)
-            }
+    override fun substituteShared(varSubst: Variable, subst: LambdaContainer, oldVariableStack: VariableStack?, newVariableStack: VariableStack?): LambdaContainer? {
+        val funcSubst = funcContainer.substituteShared(varSubst, subst, oldVariableStack, newVariableStack) ?: return null
+        val argSubst = argContainer.substituteShared(varSubst, subst, oldVariableStack, newVariableStack) ?: return null
+        return Application(funcSubst, argSubst)
+    }
+
+    override fun reduce(): Lambda? {
+
+        if (funcContainer is Abstraction)
+            return funcContainer.bodyContainer.substitute(funcContainer.param, arg.computation())?.lambda
+
+        if (funcContainer is LambdaComputation) {
+            val funcInt = funcContainer.lambda
+            if (funcInt is Abstraction)
+                return funcInt.bodyContainer.substituteShared(funcInt.param, arg.computation())?.lambda
+        }
+
+        val funcReduced = funcContainer.reduce()
+        if (funcReduced != null) {
+            if (funcReduced === funcContainer)
+                return this
+            return Application(funcReduced, argContainer)
+        }
+
+        val argReduced = argContainer.reduce()
+        if (argReduced != null) {
+            if (argReduced === argContainer)
+                return this
+            return Application(funcContainer, argReduced)
+        }
+        return null
+    }
 
     override val variables = hashSetOf<Variable>().apply {
         addAll(func.variables)
@@ -123,9 +166,6 @@ class Application(
 
     override fun hashCode(variableStack: VariableStack?): Int =
             31 * func.hashCode(variableStack) + arg.hashCode(variableStack)
-
-    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?) =
-            func.recreateParameters(oldVariableStack, newVariableStack) on arg.recreateParameters(oldVariableStack, newVariableStack)
 }
 
 class VariableReference(
@@ -134,8 +174,25 @@ class VariableReference(
 
     override fun toString(): String = variable.alias
 
-    override fun substitute(varSubst: Variable, subst: Lambda) =
-            if (varSubst == variable) subst.recreateParameters() else this
+    override fun substitute(varSubst: Variable, subst: LambdaContainer) =
+            if (varSubst == variable) subst else this
+
+    override fun substituteShared(varSubst: Variable, subst: LambdaContainer, oldVariableStack: VariableStack?, newVariableStack: VariableStack?): LambdaContainer? {
+        if (varSubst == variable) {
+            return subst
+        }
+        var oldStack = oldVariableStack
+        var newStack = newVariableStack
+        while (oldStack != null) {
+            if (newStack == null)
+                throw IllegalStateException("variable stacks have different lengths")
+            if (oldStack.variable == variable)
+                return newStack.variable.mkRef()
+            oldStack = oldStack.prev
+            newStack = newStack.prev
+        }
+        return this
+    }
 
     override fun equals(other: Lambda, yourVariableStack: VariableStack?, theirVariableStack: VariableStack?): Boolean {
         if (other !is VariableReference)
@@ -167,39 +224,53 @@ class VariableReference(
         }
         return variable.hashCode()
     }
-
-    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?): Lambda {
-        var oldStack = oldVariableStack
-        var newStack = newVariableStack
-        while (oldStack != null) {
-            if (newStack == null)
-                throw IllegalStateException("variable stacks have different lengths")
-            if (oldStack.variable == variable)
-                return newStack.variable.mkRef()
-            oldStack = oldStack.prev
-            newStack = newStack.prev
-        }
-        return this
-    }
 }
 
 class Let(
         val variable: Variable,
-        val definition: Lambda,
-        val expr: Lambda
+        val defContainer: LambdaContainer,
+        val exprContainer: LambdaContainer
 ) : Lambda() {
-    override fun substitute(varSubst: Variable, subst: Lambda): Lambda? {
-        if (varSubst in expr.variables && subst.variables.find { variable.alias == it.alias } != null) {
+
+    val definition: Lambda
+        get() = defContainer.lambda
+
+    val expr: Lambda
+        get() = exprContainer.lambda
+
+    override fun substitute(varSubst: Variable, subst: LambdaContainer): Lambda? {
+        if (varSubst in expr.variables && subst.lambda.variables.find { variable.alias == it.alias } != null) {
             return null
         }
-        val definitionSubst = definition.substitute(varSubst, subst) ?: return null
-        val exprSubst = expr.substitute(varSubst, subst) ?: return null
-        return variable.letIn(definitionSubst, exprSubst)
+        val definitionSubst = defContainer.substitute(varSubst, subst) ?: return null
+        val exprSubst = exprContainer.substitute(varSubst, subst) ?: return null
+        return Let(variable, definitionSubst, exprSubst)
+    }
+
+    override fun substituteShared(varSubst: Variable, subst: LambdaContainer, oldVariableStack: VariableStack?, newVariableStack: VariableStack?): LambdaContainer? {
+        if (varSubst in expr.variables && subst.lambda.variables.find { variable.alias == it.alias } != null) {
+            return null
+        }
+        val newVariable = Variable(variable.alias)
+        val definitionSubst = defContainer.substituteShared(varSubst, subst, oldVariableStack, newVariableStack) ?: return null
+        val exprSubst = exprContainer.substituteShared(
+                varSubst,
+                subst,
+                VariableStack(variable, oldVariableStack),
+                VariableStack(newVariable, newVariableStack)
+        ) ?: return null
+        return Let(newVariable, definitionSubst, exprSubst)
     }
 
     override fun reduce(): Lambda? {
-        val defReduced = definition.reduce() ?: return expr.substitute(variable, definition)
-
+        val substituted = exprContainer.substitute(variable, definition.computation())
+        if (substituted != null) {
+            return substituted.lambda
+        }
+        val defReduced = definition.reduce() ?: return null
+        if (defReduced === definition) {
+            return this
+        }
         return Let(variable, defReduced, expr)
     }
 
@@ -223,12 +294,6 @@ class Let(
 
     override fun hashCode(variableStack: VariableStack?) =
             31 * definition.hashCode(variableStack) + expr.hashCode(VariableStack(variable, variableStack))
-
-    override fun recreateParameters(oldVariableStack: VariableStack?, newVariableStack: VariableStack?): Lambda {
-        val newDefinition = definition.recreateParameters(oldVariableStack, newVariableStack)
-        val newVariable = Variable(variable.alias)
-        return newVariable.letIn(newDefinition, expr.recreateParameters(VariableStack(variable, oldVariableStack), VariableStack(newVariable, newVariableStack)))
-    }
 }
 
 fun Lambda.reduceFully(): Lambda {
